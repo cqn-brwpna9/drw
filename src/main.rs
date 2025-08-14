@@ -1,4 +1,3 @@
-#![allow(unused)]
 use text_io::read as readin;
 
 fn read() -> String{
