@@ -1,0 +1,12 @@
+## first batch:
+- forward
+- turn
+- dup
+- swap
+- pop
+- add
+- sub
+- mul
+- div
+- mod
+- rep loop
