@@ -1,17 +1,22 @@
-use std::collections::HashMap;
 use crate::stack;
-
-pub struct AST{
+use std::collections::HashMap;
+#[derive(Clone, PartialEq, Debug)]
+pub struct AST {
     nodes: Vec<ASTnode>,
     code: String,
 }
-struct ASTnode{
-     nodetype: ASTnodeType,
-     command: Option<Commands>,
-     structure: Option<ControlStructures>,
-     children: Option<Vec<ASTnode>>,
+
+#[derive(Clone, PartialEq, Debug)]
+struct ASTnode {
+    nodetype: ASTnodeType,
+    command: Option<Commands>,
+    structure: Option<ControlStructures>,
+    number: Option<f64>,
+    children: Option<Vec<ASTnode>>,
 }
-pub enum Commands{
+
+#[derive(Clone, PartialEq, Debug)]
+pub enum Commands {
     ForwardCommand,
     TurnCommand,
     DuplicateCommand,
@@ -23,16 +28,28 @@ pub enum Commands{
     DivideCommand,
     ModuloCommand,
 }
-pub enum ControlStructures{
-    RepeatLoop
+
+#[derive(Clone, PartialEq, Debug)]
+pub enum ControlStructures {
+    RepeatLoop,
+    WhileLoop,
+    IfBlock,
+    DipBlock,
 }
-enum ASTnodeType{
+
+#[derive(Clone, PartialEq, Debug)]
+pub enum ASTnodeType {
     Empty,
     Command,
     ControlStructure,
+    Number,
 }
-const allowed_chars: [char; 23]=['^','~','.',':','p','+','-','*','/','%',' ','0','1','2','3','4','5','6','7','8','9','[',']'];
-const conversion_map: [(char, Commands); 10]=[
+
+const ALLOWED_CHARS: [char; 29] = [
+    '^', '~', '.', ':', 'p', '+', '-', '*', '/', '%', ' ', '0', '1', '2', '3', '4', '5', '6', '7',
+    '8', '9', '[', ']', '{', '}', '<', '>', '(', ')',
+];
+const CONVERSION_MAP: [(char, Commands); 10] = [
     ('^', Commands::ForwardCommand),
     ('~', Commands::TurnCommand),
     ('.', Commands::DuplicateCommand),
@@ -43,65 +60,340 @@ const conversion_map: [(char, Commands); 10]=[
     ('*', Commands::MultiplyCommand),
     ('/', Commands::DivideCommand),
     ('%', Commands::ModuloCommand),
+]; //just use HashMap::from when actually needed
+const BRACK_CONV_MAP: [(char, ControlStructures); 4] = [
+    ('[', ControlStructures::RepeatLoop),
+    ('{', ControlStructures::WhileLoop),
+    ('<', ControlStructures::IfBlock),
+    ('(', ControlStructures::DipBlock),
 ];
-fn verify(code_in: String)-> Result<Vec<char>,String>{
-    let mut out=Vec::new();
-    let mut appended=false;
-    let mut bracket_check_stack: stack::Stack<char>=stack::Stack::new();
+const ALLOWED_COMMANDS: [char; 10] = ['^', '~', '.', ':', 'p', '+', '-', '*', '/', '%'];
+const ALLOWED_BRACKETS: [char; 8] = ['[', ']', '{', '}', '<', '>', '(', ')'];
+const NUMBER_CHARS: [char; 10] = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+
+fn verify(code_in: String) -> Result<Vec<char>, String> {
+    let mut out = Vec::new();
+    let mut appended = false;
+    let mut bracket_check_stack: stack::Stack<char> = stack::Stack::new();
     let mut peek_bracket: char;
-    for i in code_in.chars(){
-        for j in allowed_chars{
-            if i==j{
+    for i in code_in.chars() {
+        for j in ALLOWED_CHARS {
+            if i == j {
                 out.push(i);
-                println!("pushed {i}");
-                appended=true;
+                appended = true;
                 if i == '(' || i == '{' || i == '[' || i == '<' {
                     bracket_check_stack.push(i);
-                    println!("pushed bracket {i}");
                 }
-                peek_bracket=match bracket_check_stack.peek(){
-                     Some(n)=> *n,
-                     None=> ' ',
+                peek_bracket = match bracket_check_stack.peek() {
+                    Some(n) => *n,
+                    None => ' ',
                 };
-                if  (i == ')'&&peek_bracket=='(') || (i == '}'&&peek_bracket=='{') || (i == ']'&&peek_bracket=='[') || (i == '>'&&peek_bracket=='<'){
-                     println!("found closing maching bracket {i}");
-                     let throwaway=bracket_check_stack.pop();
+                if (i == ')' && peek_bracket == '(')
+                    || (i == '}' && peek_bracket == '{')
+                    || (i == ']' && peek_bracket == '[')
+                    || (i == '>' && peek_bracket == '<')
+                {
+                    let _throwaway = bracket_check_stack.pop();
+                    break;
+                }
+                if i == ')' || i == ']' || i == '}' || i == '>' {
+                    return Err("Mismached brackets".to_string());
                 }
                 break;
             }
         }
-        if !appended{
-            println!("could not find {i}");
+        if !appended {
             return Err("{i} is not a valid command".to_string());
         }
-        appended=false;
+        appended = false;
     }
-    if !bracket_check_stack.is_empty(){
-          return Err("Mismached brackets".to_string());
+    if !bracket_check_stack.is_empty() {
+        return Err("Mismached brackets".to_string());
     }
     return Ok(out);
 }
-impl AST{
-    pub fn new(code_in: String)-> Self{
-        let mut new_ast = AST{code: code_in, nodes: Vec::new()};
-        return new_ast;
+
+impl AST {
+    pub fn new(code_in: String) -> Result<Self, String> {
+        let conversion_map: HashMap<char, Commands> = HashMap::from(CONVERSION_MAP);
+        let brack_conv_map: HashMap<char, ControlStructures> = HashMap::from(BRACK_CONV_MAP);
+        let mut new_ast = AST {
+            code: code_in,
+            nodes: Vec::new(),
+        };
+        let code_verified: Result<Vec<char>, String> = verify(new_ast.code.clone());
+        if !code_verified.is_ok() {
+            return Err(code_verified.unwrap_err()); //propagate the error to the repl
+        }
+        let code_unwrapped = code_verified.unwrap();
+        let mut idx = 0;
+        let mut token: char;
+        'token_loop: while idx < code_unwrapped.len() {
+            token = code_unwrapped[idx];
+            for com in ALLOWED_COMMANDS {
+                if token == com {
+                    //dealing with a command
+                    new_ast.nodes.push(ASTnode {
+                        nodetype: ASTnodeType::Command,
+                        command: Some(conversion_map.get(&token).unwrap().clone()),
+                        structure: None,
+                        number: None,
+                        children: None,
+                    });
+                    idx += 1;
+                    continue 'token_loop;
+                }
+            }
+            for brack in ALLOWED_BRACKETS {
+                if token == brack {
+                    //dealing with a bracket
+                    idx += 1;
+                    let mut code_to_push: Vec<char> = Vec::new();
+                    let mut bracket_depth: i64 = 1;
+                    let mut current_pos: char;
+                    while idx < code_unwrapped.len() {
+                        current_pos = code_unwrapped[idx];
+                        if bracket_depth == 0 {
+                            break;
+                        }
+                        bracket_depth += if current_pos == ')'
+                            || current_pos == ']'
+                            || current_pos == '}'
+                            || current_pos == '>'
+                        {
+                            -1
+                        } else if current_pos == '('
+                            || current_pos == '{'
+                            || current_pos == '['
+                            || current_pos == '<'
+                        {
+                            1
+                        } else {
+                            0
+                        };
+                        code_to_push.push(current_pos);
+                        idx += 1;
+                    }
+                    let mut throwaway = code_to_push.pop();
+                    let mut new_ast_node: ASTnode = ASTnode {
+                        nodetype: ASTnodeType::ControlStructure,
+                        command: None,
+                        structure: Some(brack_conv_map.get(&token).unwrap().clone()),
+                        number: None,
+                        children: Some(Vec::new()),
+                    };
+                    new_ast_node.populate_children(code_to_push);
+                    new_ast.nodes.push(new_ast_node);
+                    continue 'token_loop;
+                }
+            }
+            for num in NUMBER_CHARS {
+                if token == num {
+                    //dealing with a number
+                    let mut topush: f64 = token.clone().to_string().parse::<f64>().unwrap();
+                    idx += 1;
+                    'numloop: while idx < code_unwrapped.len() {
+                        //while loop for bounds checking(blocks should be able to end with numbers)
+                        token = code_unwrapped[idx];
+                        for num2 in NUMBER_CHARS {
+                            if token == num2 {
+                                topush *= 10.0;
+                                let i = token.clone().to_string().parse::<f64>().unwrap();
+                                topush += i;
+                                idx += 1;
+                                continue 'numloop;
+                            }
+                        }
+                        break;
+                    }
+                    new_ast.nodes.push(ASTnode {
+                        nodetype: ASTnodeType::Number,
+                        command: None,
+                        structure: None,
+                        number: Some(topush),
+                        children: None,
+                    });
+                    continue 'token_loop;
+                }
+            }
+            if token == ' ' {
+                idx += 1;
+            }
+        }
+        return Ok(new_ast);
     }
 }
-impl ASTnode{}
-
-#[test]
-fn verify_test(){
-    let mut should_work_tokens: Result<Vec<char>,String>=verify("4[5^90~]".to_string());
-    println!("{}",should_work_tokens.is_ok());
-    assert_eq!(vec!['4','[','5','^','9','0','~',']'],should_work_tokens.unwrap());
-    assert_eq!(verify("4[u5^90~]".to_string()).is_ok(),false);
-    let mut should_not_work: Result<Vec<char>,String>=verify("[]]".to_string());
-    assert_eq!(should_not_work.is_ok(),false);
-    assert_eq!(verify("[}".to_string()).is_ok(),false);
-    assert_eq!(verify("({)}".to_string()).is_ok(),false);
-    assert_eq!(verify("[]".to_string()).is_ok(),true);
-    assert_eq!(verify("{}{()[]}[[[]<>]]]".to_string()).is_ok(),true);
-    assert_eq!(verify("[{(<>)}]".to_string()).is_ok(),false);
-    
+impl ASTnode {
+    pub fn populate_children(&mut self, code_in: Vec<char>) {
+        let conversion_map: HashMap<char, Commands> = HashMap::from(CONVERSION_MAP);
+        let brack_conv_map: HashMap<char, ControlStructures> = HashMap::from(BRACK_CONV_MAP);
+        let mut idx = 0;
+        let mut token: char;
+        'token_loop: while idx < code_in.len() {
+            token = code_in[idx];
+            for com in ALLOWED_COMMANDS {
+                if token == com {
+                    //dealing with a command
+                    self.children.as_mut().unwrap().push(ASTnode {
+                        nodetype: ASTnodeType::Command,
+                        command: Some(conversion_map.get(&token).unwrap().clone()),
+                        structure: None,
+                        number: None,
+                        children: None,
+                    });
+                    idx += 1;
+                    continue 'token_loop;
+                }
+            }
+            for brack in ALLOWED_BRACKETS {
+                if token == brack {
+                    //dealing with a bracket
+                    idx += 1;
+                    let mut code_to_push: Vec<char> = Vec::new();
+                    let mut bracket_depth: i64 = 1;
+                    let mut current_pos: char;
+                    while idx < code_in.len() {
+                        current_pos = code_in[idx];
+                        if bracket_depth == 0 {
+                            break;
+                        }
+                        bracket_depth += if current_pos == ')'
+                            || current_pos == ']'
+                            || current_pos == '}'
+                            || current_pos == '>'
+                        {
+                            -1
+                        } else if current_pos == '('
+                            || current_pos == '{'
+                            || current_pos == '['
+                            || current_pos == '<'
+                        {
+                            1
+                        } else {
+                            0
+                        };
+                        code_to_push.push(current_pos);
+                        idx += 1;
+                    }
+                    let mut throwaway = code_to_push.pop();
+                    let mut new_ast_node: ASTnode = ASTnode {
+                        nodetype: ASTnodeType::ControlStructure,
+                        command: None,
+                        structure: Some(brack_conv_map.get(&token).unwrap().clone()),
+                        number: None,
+                        children: Some(Vec::new()),
+                    };
+                    new_ast_node.populate_children(code_to_push);
+                    self.children.as_mut().unwrap().push(new_ast_node);
+                    continue 'token_loop;
+                }
+            }
+            for num in NUMBER_CHARS {
+                if token == num {
+                    //dealing with a number
+                    let mut topush: f64 = token.clone().to_string().parse::<f64>().unwrap();
+                    idx += 1;
+                    'numloop: while idx < code_in.len() {
+                        //while loop for bounds checking(blocks should be able to end with numbers)
+                        token = code_in[idx];
+                        for num2 in NUMBER_CHARS {
+                            if token == num2 {
+                                topush *= 10.0;
+                                topush += token.clone().to_string().parse::<f64>().unwrap();
+                                idx += 1;
+                                continue 'numloop;
+                            }
+                        }
+                        break;
+                    }
+                    self.children.as_mut().unwrap().push(ASTnode {
+                        nodetype: ASTnodeType::Number,
+                        command: None,
+                        structure: None,
+                        number: Some(topush),
+                        children: None,
+                    });
+                    continue 'token_loop;
+                }
+            }
+            if token == ' ' {
+                idx += 1;
+            }
+        }
+    }
 }
 
+#[test]
+fn verify_test() {
+    let should_work_tokens: Result<Vec<char>, String> = verify("4[5^90~]".to_string());
+    println!("testing 4[5^90~]");
+    assert_eq!(
+        vec!['4', '[', '5', '^', '9', '0', '~', ']'],
+        should_work_tokens.unwrap()
+    );
+    assert_eq!(verify("4[u5^90~]".to_string()).is_ok(), false);
+    let should_not_work: Result<Vec<char>, String> = verify("[]]".to_string());
+    println!("testing []]");
+    assert_eq!(should_not_work.is_ok(), false);
+    println!("testing [}}");
+    assert_eq!(verify("[}".to_string()).is_ok(), false);
+    println!("testing ({{)}}");
+    assert_eq!(verify("({)}".to_string()).is_ok(), false);
+    println!("testing []");
+    assert_eq!(verify("[]".to_string()).is_ok(), true);
+    println!("testing {{}}{{()[]}}");
+    assert_eq!(verify("{}{()[]}".to_string()).is_ok(), true);
+    println!("testing [{{(<>)}}]");
+    assert_eq!(verify("[{(<>)}]".to_string()).is_ok(), true);
+}
+#[test]
+fn astnew_test() {
+    let mut should_work: Result<AST, String> = AST::new("2 2+[5^90~]".to_string());
+    assert_eq!(should_work.is_ok(), true);
+    assert_eq!(
+        should_work.unwrap().nodes[2],
+        ASTnode {
+            nodetype: ASTnodeType::Command,
+            command: Some(Commands::AddCommand),
+            structure: None,
+            number: None,
+            children: None,
+        }
+    );
+    let mut should_work: Result<AST, String> = AST::new("4[5^90~]".to_string());
+    assert_eq!(
+        should_work.unwrap().nodes[0],
+        ASTnode {
+            nodetype: ASTnodeType::Number,
+            command: None,
+            structure: None,
+            number: Some(4.0),
+            children: None,
+        }
+    );
+    let mut should_work: Result<AST, String> = AST::new("91".to_string());
+    assert_eq!(
+        should_work.unwrap().nodes[0],
+        ASTnode {
+            nodetype: ASTnodeType::Number,
+            command: None,
+            structure: None,
+            number: Some(91.0),
+            children: None,
+        }
+    );
+    let mut should_work: Result<AST, String> = AST::new("2[180~3[10^90~]]".to_string());
+    assert_eq!(
+        should_work.unwrap().nodes[1].children.clone().unwrap()[3]//I dont know WHY cargo fmt insits this is the best way to format this and at this point, i'm too scared to ask
+            .children
+            .clone()
+            .unwrap()[1],
+        ASTnode {
+            nodetype: ASTnodeType::Command,
+            command: Some(Commands::ForwardCommand),
+            structure: None,
+            number: None,
+            children: None,
+        }
+    );
+}

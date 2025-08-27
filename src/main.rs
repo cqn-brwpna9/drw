@@ -1,6 +1,6 @@
 use text_io::read as readin;
-mod stack;
 mod ast;
+mod stack;
 
 fn read() -> String {
     print!(">");
@@ -8,7 +8,11 @@ fn read() -> String {
     return input;
 }
 
-fn eval(ast: String,data_stack: &mut stack::Stack<f64>,dip_stack: &mut stack::Stack<f64>) -> String {
+fn eval(
+    ast: String,
+    data_stack: &mut stack::Stack<f64>,
+    dip_stack: &mut stack::Stack<f64>,
+) -> String {
     println!("in eval, got {ast}");
     return ast;
 }
@@ -18,9 +22,9 @@ fn print(string: String) {
 }
 
 fn main() {
-    let mut data_stack: stack::Stack<f64>=stack::Stack::new();
-    let mut dip_stack: stack::Stack<f64>=stack::Stack::new();
+    let mut data_stack: stack::Stack<f64> = stack::Stack::new();
+    let mut dip_stack: stack::Stack<f64> = stack::Stack::new();
     loop {
-        print(eval(read(),&mut data_stack,&mut dip_stack));
+        print(eval(read(), &mut data_stack, &mut dip_stack));
     }
 }

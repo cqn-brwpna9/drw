@@ -69,5 +69,5 @@ Result: `a%b`
 |Name|Repl|Glyph|Description|
 |---|---|---|---|
 |Repeat loop|`[...]`|`[...]`|Pops one number off the stack, and executes the code within that many times|
-|while loop|`{...}`|`{...}`|Executes the code within `{...}` until `1` is not on top of the stack when the code within `{...}` is finished running.|
-|If statement|`<...>`|`<...>`|Executes the code in `<...>` only if `1` is on top of the stack.|
+|while loop|`{...}`|`{...}`|Executes the code within `{...}` until `0` is on top of the stack when the code within `{...}` is finished running.|
+|If statement|`<...>`|`<...>`|Executes the code in `<...>` only if `0` is not on top of the stack.|
