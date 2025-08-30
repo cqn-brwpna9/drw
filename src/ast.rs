@@ -2,17 +2,17 @@ use crate::stack;
 use std::collections::HashMap;
 #[derive(Clone, PartialEq, Debug)]
 pub struct AST {
-    nodes: Vec<ASTnode>,
+    pub nodes: Vec<ASTnode>,
     code: String,
 }
 
 #[derive(Clone, PartialEq, Debug)]
-struct ASTnode {
-    nodetype: ASTnodeType,
-    command: Option<Commands>,
-    structure: Option<ControlStructures>,
-    number: Option<f64>,
-    children: Option<Vec<ASTnode>>,
+pub struct ASTnode {
+    pub nodetype: ASTnodeType,
+    pub command: Option<Commands>,
+    pub structure: Option<ControlStructures>,
+    pub number: Option<f64>,
+    pub children: Option<Vec<ASTnode>>,
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -103,7 +103,7 @@ fn verify(code_in: String) -> Result<Vec<char>, String> {
             }
         }
         if !appended {
-            return Err("{i} is not a valid command".to_string());
+            return Err(format!("{i} is not a valid command").to_string());
         }
         appended = false;
     }
@@ -174,7 +174,7 @@ impl AST {
                         code_to_push.push(current_pos);
                         idx += 1;
                     }
-                    let mut throwaway = code_to_push.pop();
+                    let _throwaway = code_to_push.pop();
                     let mut new_ast_node: ASTnode = ASTnode {
                         nodetype: ASTnodeType::ControlStructure,
                         command: None,
@@ -275,7 +275,7 @@ impl ASTnode {
                         code_to_push.push(current_pos);
                         idx += 1;
                     }
-                    let mut throwaway = code_to_push.pop();
+                    let _throwaway = code_to_push.pop();
                     let mut new_ast_node: ASTnode = ASTnode {
                         nodetype: ASTnodeType::ControlStructure,
                         command: None,
