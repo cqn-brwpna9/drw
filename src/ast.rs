@@ -127,7 +127,7 @@ impl AST {
             children: Some(Vec::new()),
         };
         head_node.populate_children(code_unwrapped);
-        let mut new_ast = AST {
+        let new_ast = AST {
             code: code_in,
             node: head_node,
         };
@@ -259,7 +259,7 @@ fn verify_test() {
 }
 #[test]
 fn astnew_test() {
-    let mut should_work: Result<AST, String> = AST::new("2 2+[5^90~]".to_string());
+    let should_work: Result<AST, String> = AST::new("2 2+[5^90~]".to_string());
     assert_eq!(should_work.is_ok(), true);
     assert_eq!(
         should_work.unwrap().node.children.clone().unwrap()[2],
@@ -271,7 +271,7 @@ fn astnew_test() {
             children: None,
         }
     );
-    let mut should_work: Result<AST, String> = AST::new("4[5^90~]".to_string());
+    let should_work: Result<AST, String> = AST::new("4[5^90~]".to_string());
     assert_eq!(
         should_work.unwrap().node.children.clone().unwrap()[0],
         ASTnode {
@@ -282,7 +282,7 @@ fn astnew_test() {
             children: None,
         }
     );
-    let mut should_work: Result<AST, String> = AST::new("91".to_string());
+    let should_work: Result<AST, String> = AST::new("91".to_string());
     assert_eq!(
         should_work.unwrap().node.children.clone().unwrap()[0],
         ASTnode {
@@ -293,7 +293,7 @@ fn astnew_test() {
             children: None,
         }
     );
-    let mut should_work: Result<AST, String> = AST::new("2[180~3[10^90~]]".to_string());
+    let should_work: Result<AST, String> = AST::new("2[180~3[10^90~]]".to_string());
     assert_eq!(
         should_work.unwrap().node.children.clone().unwrap()[1]
             .children
