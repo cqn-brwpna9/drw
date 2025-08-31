@@ -4,7 +4,7 @@ pub struct Stack<T> {
 
 impl<T> Stack<T>
 where
-    T: Clone+ToString,
+    T: Clone + ToString,
 {
     pub fn new() -> Self {
         Stack { stack: Vec::new() }
@@ -36,12 +36,12 @@ where
     pub fn dup(&mut self) {
         self.push(self.peek().unwrap().clone())
     }
-    pub fn to_string(&mut self)->String{
-        let mut out="bottom\n".to_string();
-        for i in &self.stack{
-            out+=&(i.to_string()+"\n");
+    pub fn to_string(&mut self) -> String {
+        let mut out = "bottom\n".to_string();
+        for i in &self.stack {
+            out += &(i.to_string() + "\n");
         }
-        return out+"top\n";
+        return out + "top\n";
     }
 }
 #[test]
@@ -118,5 +118,5 @@ fn to_string_test() {
     a.push(1);
     a.push(2);
     println!("{}", a.to_string());
-    assert_eq!(a.to_string(),"1\n2\n".to_string());
+    assert_eq!(a.to_string(), "bottom\n1\n2\ntop\n".to_string());
 }
