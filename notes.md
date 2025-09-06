@@ -18,4 +18,3 @@
 ## third batch:
 - dip
 - while loop
-- if

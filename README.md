@@ -28,7 +28,7 @@ A feature will have :( by it if it is unimplemented
 |---|---|---|---|
 |Duplicate|`.`|`.`|Duplicates the top stack value.|
 |Swap|`:`|`:`|Swaps the two top stack values.|
-|Dip:(|`D(...)`|`⊙(...)`|Temporarliy pops the top stack value then calls whatever is in (...) then puts it back on.|
+|Dip:(|`(...)`|`(...)`|Temporarliy pops the top stack value then calls whatever is in (...) then puts it back on.|
 |Pop|`p`|`◌`|Discards the top stack value.|
 |Debug print:(|`?`|`?`|Print out the whole stack without poping it. IS CONSIDERED HIGH HERESY|
 
@@ -70,4 +70,3 @@ Result: `a%b`
 |---|---|---|---|
 |Repeat loop|`[...]`|`[...]`|Pops one number off the stack, and executes the code within that many times|
 |while loop:(|`{...}`|`{...}`|Executes the code within `{...}` until `0` is on top of the stack when the code within `{...}` is finished running.|
-|If statement:(|`<...>`|`<...>`|Executes the code in `<...>` only if `0` is not on top of the stack.|

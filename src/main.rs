@@ -1,3 +1,6 @@
+use std::fs::File;
+use std::io::BufReader;
+use std::io::prelude::*;
 use text_io::read as readin;
 use turtle::Turtle;
 mod ast;
@@ -5,8 +8,13 @@ mod stack;
 
 fn read() -> Result<ast::AST, String> {
     print!(">");
-    let input = readin!("{}\n");
-    return ast::AST::new(input);
+    let mut input = Vec::new();
+    let linein: String = readin!("{}\n");
+    let _ = BufReader::new(File::open(linein.as_str()).unwrap()).read_until(b'\0', &mut input);
+    let _ = input.pop(); //take off the ending null charicter
+    return ast::AST::new(
+        String::from_utf8(input).unwrap_or("Hey, theres somthing wrong with that file".to_string()),
+    );
 }
 
 fn eval(
