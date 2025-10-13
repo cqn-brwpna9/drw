@@ -2,7 +2,7 @@ use crate::stack;
 use std::collections::HashMap;
 #[derive(Clone, PartialEq, Debug)]
 pub struct AST {
-    pub node: ASTnode, //type
+    pub node: ASTnode,
     code: String,
 }
 
@@ -27,13 +27,30 @@ pub enum Commands {
     MultiplyCommand,
     DivideCommand,
     ModuloCommand,
+    DegreeCommand,
+    RadianCommand,
+    ColorCommand,
+    PenDownCommand,
+    PenUpCommand,
+    SizeCommand,
+    DebugCommand,
+    PowerCommand,
+    LogCommand,
+    EulerNumCommand,
+    SquareRootCommand,
+    SineCommand,
+    CeilingCommand,
+    FloorCommand,
+    RoundCommand,
+    LessThanCommand,
+    GreaterThanCommand,
+    EqualCommand,
 }
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum ControlStructures {
     RepeatLoop,
     WhileLoop,
-    IfBlock,
     DipBlock,
 }
 
@@ -45,11 +62,12 @@ pub enum ASTnodeType {
     Number,
 }
 
-const ALLOWED_CHARS: [char; 29] = [
+const ALLOWED_CHARS: [char; 45] = [
     '^', '~', '.', ':', 'p', '+', '-', '*', '/', '%', ' ', '0', '1', '2', '3', '4', '5', '6', '7',
-    '8', '9', '[', ']', '{', '}', '<', '>', '(', ')',
+    '8', '9', '[', ']', '{', '}', '(', ')', 'o', 'r', 'c', 'd', 'u', 's', '?', 'P', 'l', 'e', 'q',
+    'S', 'C', 'f', 'R', '>', '<', '=',
 ];
-const CONVERSION_MAP: [(char, Commands); 10] = [
+const CONVERSION_MAP: [(char, Commands); 28] = [
     ('^', Commands::ForwardCommand),
     ('~', Commands::TurnCommand),
     ('.', Commands::DuplicateCommand),
@@ -60,15 +78,35 @@ const CONVERSION_MAP: [(char, Commands); 10] = [
     ('*', Commands::MultiplyCommand),
     ('/', Commands::DivideCommand),
     ('%', Commands::ModuloCommand),
+    ('o', Commands::DegreeCommand),
+    ('r', Commands::RadianCommand),
+    ('c', Commands::ColorCommand),
+    ('d', Commands::PenDownCommand),
+    ('u', Commands::PenUpCommand),
+    ('s', Commands::SizeCommand),
+    ('?', Commands::DebugCommand),
+    ('P', Commands::PowerCommand),
+    ('l', Commands::LogCommand),
+    ('e', Commands::EulerNumCommand),
+    ('q', Commands::SquareRootCommand),
+    ('S', Commands::SineCommand),
+    ('C', Commands::CeilingCommand),
+    ('f', Commands::FloorCommand),
+    ('R', Commands::RoundCommand),
+    ('>', Commands::LessThanCommand),
+    ('<', Commands::GreaterThanCommand),
+    ('=', Commands::EqualCommand),
 ]; //just use HashMap::from when actually needed
-const BRACK_CONV_MAP: [(char, ControlStructures); 4] = [
+const BRACK_CONV_MAP: [(char, ControlStructures); 3] = [
     ('[', ControlStructures::RepeatLoop),
     ('{', ControlStructures::WhileLoop),
-    ('<', ControlStructures::IfBlock),
     ('(', ControlStructures::DipBlock),
+];//ditto
+const ALLOWED_COMMANDS: [char; 28] = [
+    '^', '~', '.', ':', 'p', '+', '-', '*', '/', '%', 'o', 'r', 'c', 'd', 'u', 's', '?', 'P', 'l',
+    'e', 'q', 'S', 'C', 'f', 'R', '>', '<', '=',
 ];
-const ALLOWED_COMMANDS: [char; 10] = ['^', '~', '.', ':', 'p', '+', '-', '*', '/', '%'];
-const ALLOWED_BRACKETS: [char; 8] = ['[', ']', '{', '}', '<', '>', '(', ')'];
+const ALLOWED_BRACKETS: [char; 6] = ['[', ']', '{', '}', '(', ')'];
 const NUMBER_CHARS: [char; 10] = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
 fn verify(code_in: String) -> Result<Vec<char>, String> {
@@ -81,7 +119,7 @@ fn verify(code_in: String) -> Result<Vec<char>, String> {
             if i == j {
                 out.push(i);
                 appended = true;
-                if i == '(' || i == '{' || i == '[' || i == '<' {
+                if i == '(' || i == '{' || i == '[' {
                     bracket_check_stack.push(i);
                 }
                 peek_bracket = match bracket_check_stack.peek() {
@@ -91,12 +129,11 @@ fn verify(code_in: String) -> Result<Vec<char>, String> {
                 if (i == ')' && peek_bracket == '(')
                     || (i == '}' && peek_bracket == '{')
                     || (i == ']' && peek_bracket == '[')
-                    || (i == '>' && peek_bracket == '<')
                 {
                     let _throwaway = bracket_check_stack.pop();
                     break;
                 }
-                if i == ')' || i == ']' || i == '}' || i == '>' {
+                if i == ')' || i == ']' || i == '}' {
                     return Err("Mismached brackets".to_string());
                 }
                 break;
@@ -168,21 +205,15 @@ impl ASTnode {
                         if bracket_depth == 0 {
                             break;
                         }
-                        bracket_depth += if current_pos == ')'
-                            || current_pos == ']'
-                            || current_pos == '}'
-                            || current_pos == '>'
-                        {
-                            -1
-                        } else if current_pos == '('
-                            || current_pos == '{'
-                            || current_pos == '['
-                            || current_pos == '<'
-                        {
-                            1
-                        } else {
-                            0
-                        };
+                        bracket_depth +=
+                            if current_pos == ')' || current_pos == ']' || current_pos == '}' {
+                                -1
+                            } else if current_pos == '(' || current_pos == '{' || current_pos == '['
+                            {
+                                1
+                            } else {
+                                0
+                            };
                         code_to_push.push(current_pos);
                         idx += 1;
                     }
@@ -242,7 +273,7 @@ fn verify_test() {
         vec!['4', '[', '5', '^', '9', '0', '~', ']'],
         should_work_tokens.unwrap()
     );
-    assert_eq!(verify("4[u5^90~]".to_string()).is_ok(), false);
+    assert_eq!(verify("4[|5^90~]".to_string()).is_ok(), false);
     let should_not_work: Result<Vec<char>, String> = verify("[]]".to_string());
     println!("testing []]");
     assert_eq!(should_not_work.is_ok(), false);
@@ -254,8 +285,8 @@ fn verify_test() {
     assert_eq!(verify("[]".to_string()).is_ok(), true);
     println!("testing {{}}{{()[]}}");
     assert_eq!(verify("{}{()[]}".to_string()).is_ok(), true);
-    println!("testing [{{(<>)}}]");
-    assert_eq!(verify("[{(<>)}]".to_string()).is_ok(), true);
+    println!("testing [{{()}}]");//the extra {} are for format! 
+    assert_eq!(verify("[{()}]".to_string()).is_ok(), true);
 }
 #[test]
 fn astnew_test() {

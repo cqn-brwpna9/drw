@@ -28,9 +28,30 @@ A feature will have :( by it if it is unimplemented
 |---|---|---|---|
 |Duplicate|`.`|`.`|Duplicates the top stack value.|
 |Swap|`:`|`:`|Swaps the two top stack values.|
-|Dip:(|`(...)`|`(...)`|Temporarliy pops the top stack value then calls whatever is in (...) then puts it back on.|
+|Dip:(|`(...)`|`(...)`|Temporarliy pops the top stack value then runs whatever is in (...) then puts it back on.|
 |Pop|`p`|`◌`|Discards the top stack value.|
 |Debug print:(|`?`|`?`|Print out the whole stack without poping it. IS CONSIDERED HIGH HERESY|
+|Pull:(|`,`|`,`|pulls one stack value to the top of the stack that is whatever is on top of the stack deep|
+
+Pull example
+
+|Stack before pull:|pull index number|
+|---|---|
+|top||
+|2|no idx|
+|a|idx 0|
+|b|idx 1|
+|c|idx 2|
+|d|idx 3|
+|bottom||
+
+|Stack after pull:|
+|---|
+|c|
+|a|
+|b|
+|d|
+|bottom||
 
 ### Math commands
 #### Note: All commands for which order is important take their arguments off the stack like this:
@@ -52,17 +73,17 @@ Result: `a%b`
 |Multiply|`*`|`×`|Multiplies the top two numbers on the stack.|
 |Divide|`/`|`÷`|Divides the top two numbers on the stack.|
 |Modulo|`%`|`%`|Modulos the top two numbers on the stack.|
-|Power:(|`P`|`⁺`|Rases the top value on the stack to the value below it.|
-|Log:(|`l`|`₊`|Takes the logarithim of the top stack value of base the value below it.|
-|E:(|`e`|`e`|Pushes e.| 
-|Square root:(|`q`|`√`|Takes the square root of the top of the stack.|
-|Sine:(|`S`|`∿`|Takes the sine of the top of the stack.|
-|Ceilng:(|`C`|`⌈`|Rounds to the number above the current number.|
-|Floor:(|`f`|`⌊`|Rounds to the number below the current number.|
-|Round:(|`R`|`⁅`|Rounds to the nearest integer.|
-|Less than:(|`<`|`<`|Pops two numbers from the stack, pushing 1 if the first is less than the second, pushing 0 otherwise|
-|Greater than:(|`>`|`>`|Pops two numbers from the stack, pushing 1 if the first is more than the second, pushing 0 otherwise|
-|Equal:(|`=`|`=`|Pops two numbers from the stack, pushing 1 if the first is equal to second, pushing 0 otherwise|
+|Power|`P`|`⁺`|Rases the top value on the stack to the value below it.|
+|Log|`l`|`₊`|Takes the logarithim of the top stack value of base the value below it.|
+|E|`e`|`e`|Pushes e.| 
+|Square root|`q`|`√`|Takes the square root of the top of the stack.|
+|Sine|`S`|`∿`|Takes the sine of the top of the stack.|
+|Ceilng|`C`|`⌈`|Rounds to the number above the current number.|
+|Floor|`f`|`⌊`|Rounds to the number below the current number.|
+|Round|`R`|`⁅`|Rounds to the nearest integer.|
+|Less than|`<`|`<`|Pops two numbers from the stack, pushing 1 if the first is less than the second, pushing 0 otherwise|
+|Greater than|`>`|`>`|Pops two numbers from the stack, pushing 1 if the first is more than the second, pushing 0 otherwise|
+|Equal|`=`|`=`|Pops two numbers from the stack, pushing 1 if the first is equal to second, pushing 0 otherwise|
 
 ### Control flow commands
 
