@@ -2,13 +2,13 @@ use std::fs::File;
 use std::io::BufReader;
 use std::io::prelude::*;
 use text_io::read as readin;
-use turtle::Turtle;
 mod ast;
 mod stack;
+mod turtle;
 
-const THE_NUMBER_OF_RADIANS_IN_A_CIRCLE: f64=6.283185307179586;
-const EULERS_NUMBER: f64=2.7182818284590452;
-const THE_NUMBER_OF_DEGREES_IN_A_CIRCLE: f64=360.0;
+const THE_NUMBER_OF_RADIANS_IN_A_CIRCLE: f64 = 6.283185307179586;
+const EULERS_NUMBER: f64 = 2.7182818284590452;
+const THE_NUMBER_OF_DEGREES_IN_A_CIRCLE: f64 = 360.0;
 
 fn read() -> Result<ast::AST, String> {
     print!(">");
@@ -25,14 +25,13 @@ fn eval(
     syntax_tree: ast::AST,
     data_stack: &mut stack::Stack<f64>,
     dip_stack: &mut stack::Stack<f64>,
+    drawing_turtle: &mut turtle::Turtle,
 ) -> String {
-    let mut turtle = Turtle::new();
-    turtle.set_speed(20);
     evallist(
         syntax_tree.node.children.unwrap(),
         data_stack,
         dip_stack,
-        &mut turtle,
+        drawing_turtle,
     );
     return data_stack.to_string();
 }
@@ -42,15 +41,18 @@ fn evallist(
     syntax_tree: Vec<ast::ASTnode>,
     data_stack: &mut stack::Stack<f64>,
     dip_stack: &mut stack::Stack<f64>,
-    turtle: &mut Turtle,
+    drawing_turtle: &mut turtle::Turtle,
 ) {
     let mut _throwaway: f64 = 0.0;
     for node in syntax_tree {
         match node.nodetype {
             ast::ASTnodeType::Number => data_stack.push(node.number.unwrap()),
             ast::ASTnodeType::Command => match node.command.unwrap() {
-                ast::Commands::ForwardCommand => turtle.forward(data_stack.pop().unwrap()),
-                ast::Commands::TurnCommand => turtle.right(data_stack.pop().unwrap()),
+                ast::Commands::ForwardCommand => {
+                    drawing_turtle.forward(data_stack.pop().unwrap() as f32);
+                    drawing_turtle.push();
+                }
+                ast::Commands::TurnCommand => drawing_turtle.turn(data_stack.pop().unwrap() as f32),
                 ast::Commands::DuplicateCommand => data_stack.dup(),
                 ast::Commands::SwapCommand => data_stack.swap(),
                 ast::Commands::PopCommand => _throwaway = data_stack.pop().unwrap(),
@@ -79,89 +81,94 @@ fn evallist(
                     let b = data_stack.pop().unwrap();
                     data_stack.push(a % b);
                 }
-                ast::Commands::DegreeCommand=>{
-                  if turtle.is_using_degrees(){
-                      data_stack.push(THE_NUMBER_OF_DEGREES_IN_A_CIRCLE);
-                  }else{
-                      turtle.use_degrees();
-                  }  
+                ast::Commands::DegreeCommand => {
+                    if drawing_turtle.using_degrees() {
+                        data_stack.push(THE_NUMBER_OF_DEGREES_IN_A_CIRCLE);
+                    } else {
+                        drawing_turtle.set_turn_mode(turtle::TurnModes::DEGREE);
+                    }
                 }
-                ast::Commands::RadianCommand=>{
-                  if turtle.is_using_radians(){
-                      data_stack.push(THE_NUMBER_OF_RADIANS_IN_A_CIRCLE);
-                  }else{
-                      turtle.use_radians();
-                  }  
+                ast::Commands::RadianCommand => {
+                    if drawing_turtle.using_radians() {
+                        data_stack.push(THE_NUMBER_OF_RADIANS_IN_A_CIRCLE);
+                    } else {
+                        drawing_turtle.set_turn_mode(turtle::TurnModes::RADIAN);
+                    }
                 }
-                ast::Commands::ColorCommand=>{
-                    let r=data_stack.pop().unwrap();
-                    let g=data_stack.pop().unwrap();
-                    let b=data_stack.pop().unwrap();
-                    turtle.set_pen_color([r,g,b]);
+                ast::Commands::ColorCommand => {
+                    let r = data_stack.pop().unwrap();
+                    let g = data_stack.pop().unwrap();
+                    let b = data_stack.pop().unwrap();
+                    drawing_turtle.set_color(r as u8, g as u8, b as u8);
                 }
-                ast::Commands::PenDownCommand=>turtle.pen_down(),
-                ast::Commands::PenUpCommand=>turtle.pen_up(),
-                ast::Commands::SizeCommand=>turtle.set_pen_size(data_stack.pop().unwrap()),
-                ast::Commands::DebugCommand=>println!("{}",data_stack.to_string()),
-                ast::Commands::PowerCommand=>{
+                ast::Commands::PenDownCommand => drawing_turtle.pen_down(),
+                ast::Commands::PenUpCommand => drawing_turtle.pen_up(),
+                ast::Commands::SizeCommand => {
+                    drawing_turtle.set_pen_size(data_stack.pop().unwrap() as f32)
+                }
+                ast::Commands::DebugCommand => println!("{}", data_stack.to_string()),
+                ast::Commands::PowerCommand => {
                     let a = data_stack.pop().unwrap();
                     let b = data_stack.pop().unwrap();
                     data_stack.push(a.powf(b));
                 }
-                ast::Commands::LogCommand=>{
+                ast::Commands::LogCommand => {
                     let a = data_stack.pop().unwrap();
                     let b = data_stack.pop().unwrap();
                     data_stack.push(a.log(b));
                 }
-                ast::Commands::EulerNumCommand=>data_stack.push(EULERS_NUMBER),
-                ast::Commands::SquareRootCommand=>{//I don't love doing this this way, but what rustc wants, rustc gets
-                    let a=data_stack.pop().unwrap();
+                ast::Commands::EulerNumCommand => data_stack.push(EULERS_NUMBER),
+                ast::Commands::SquareRootCommand => {
+                    //I don't love doing this this way, but what rustc wants, rustc gets
+                    let a = data_stack.pop().unwrap();
                     data_stack.push(a.sqrt());
                 }
-                ast::Commands::SineCommand=>{
-                    let a=data_stack.pop().unwrap();
+                ast::Commands::SineCommand => {
+                    let a = data_stack.pop().unwrap();
                     data_stack.push(a.sin());
                 }
-                ast::Commands::CeilingCommand=>{
-                    let a=data_stack.pop().unwrap();
+                ast::Commands::CeilingCommand => {
+                    let a = data_stack.pop().unwrap();
                     data_stack.push(a.ceil());
                 }
-                ast::Commands::FloorCommand=>{
-                    let a=data_stack.pop().unwrap();
+                ast::Commands::FloorCommand => {
+                    let a = data_stack.pop().unwrap();
                     data_stack.push(a.floor());
                 }
-                ast::Commands::RoundCommand=>{
-                    let a=data_stack.pop().unwrap();
+                ast::Commands::RoundCommand => {
+                    let a = data_stack.pop().unwrap();
                     data_stack.push(a.round());
                 }
-                ast::Commands::LessThanCommand=>{
+                ast::Commands::LessThanCommand => {
                     let a = data_stack.pop().unwrap();
                     let b = data_stack.pop().unwrap();
-                    if a<b{
+                    if a < b {
                         data_stack.push(1.);
-                    }else{
+                    } else {
                         data_stack.push(0.);
-                   }
+                    }
                 }
-                ast::Commands::GreaterThanCommand=>{
+                ast::Commands::GreaterThanCommand => {
                     let a = data_stack.pop().unwrap();
                     let b = data_stack.pop().unwrap();
-                    if a>b{
+                    if a > b {
                         data_stack.push(1.);
-                    }else{
+                    } else {
                         data_stack.push(0.);
-                   }
+                    }
                 }
-                ast::Commands::EqualCommand=>{
+                ast::Commands::EqualCommand => {
                     let a = data_stack.pop().unwrap();
                     let b = data_stack.pop().unwrap();
-                    if a==b{
+                    if a == b {
                         data_stack.push(1.);
-                    }else{
+                    } else {
                         data_stack.push(0.);
-                   }
+                    }
                 }
-                _=>panic!("You somehow made an nonsense ASTnode. Good job! If you are getting this error and you have not messed with the code, I really don't know what's going on. If you have, you made the issue"),//Everything should be matched
+                _ => panic!(
+                    "You somehow made an nonsense ASTnode. Good job! If you are getting this error and you have not messed with the code, I really don't know what's going on. If you have, you made the issue. Be sure to impliment all ast node types in main.rs"
+                ), //Everything should be matched
             },
             ast::ASTnodeType::ControlStructure => match node.structure.unwrap() {
                 ast::ControlStructures::RepeatLoop => {
@@ -171,7 +178,7 @@ fn evallist(
                             node.children.clone().unwrap(),
                             data_stack,
                             dip_stack,
-                            turtle,
+                            drawing_turtle,
                         );
                     }
                 }
@@ -187,13 +194,20 @@ fn print(string: String) {
 }
 
 fn main() {
-    turtle::start();
     let mut data_stack: stack::Stack<f64> = stack::Stack::new();
     let mut dip_stack: stack::Stack<f64> = stack::Stack::new();
+    let mut drawing_turtle = turtle::Turtle::new();
     let ast_to_pass = read();
     if ast_to_pass.is_ok() {
-        print(eval(ast_to_pass.unwrap(), &mut data_stack, &mut dip_stack));
+        print(eval(
+            ast_to_pass.unwrap(),
+            &mut data_stack,
+            &mut dip_stack,
+            &mut drawing_turtle,
+        ));
     } else {
         println!("{}", ast_to_pass.unwrap_err());
     }
+    println!("{:?}", drawing_turtle.get_history());
+    drawing_turtle.render()
 }

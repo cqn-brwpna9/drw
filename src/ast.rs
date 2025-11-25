@@ -101,7 +101,7 @@ const BRACK_CONV_MAP: [(char, ControlStructures); 3] = [
     ('[', ControlStructures::RepeatLoop),
     ('{', ControlStructures::WhileLoop),
     ('(', ControlStructures::DipBlock),
-];//ditto
+]; //ditto
 const ALLOWED_COMMANDS: [char; 28] = [
     '^', '~', '.', ':', 'p', '+', '-', '*', '/', '%', 'o', 'r', 'c', 'd', 'u', 's', '?', 'P', 'l',
     'e', 'q', 'S', 'C', 'f', 'R', '>', '<', '=',
@@ -285,7 +285,7 @@ fn verify_test() {
     assert_eq!(verify("[]".to_string()).is_ok(), true);
     println!("testing {{}}{{()[]}}");
     assert_eq!(verify("{}{()[]}".to_string()).is_ok(), true);
-    println!("testing [{{()}}]");//the extra {} are for format! 
+    println!("testing [{{()}}]"); //the extra {} are for format! 
     assert_eq!(verify("[{()}]".to_string()).is_ok(), true);
 }
 #[test]

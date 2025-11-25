@@ -28,10 +28,10 @@ A feature will have :( by it if it is unimplemented
 |---|---|---|---|
 |Duplicate|`.`|`.`|Duplicates the top stack value.|
 |Swap|`:`|`:`|Swaps the two top stack values.|
-|Dip:(|`(...)`|`(...)`|Temporarliy pops the top stack value then runs whatever is in (...) then puts it back on.|
+|Dip and undip:(|`(`and`)`|`(`and`)`| `(` temporarliy pops the top stack value to an inacsessable stack that can be thought of as "above" the main stack. `)` pushes one value from the upper stack.|
 |Pop|`p`|`◌`|Discards the top stack value.|
 |Debug print:(|`?`|`?`|Print out the whole stack without poping it. IS CONSIDERED HIGH HERESY|
-|Pull:(|`,`|`,`|pulls one stack value to the top of the stack that is whatever is on top of the stack deep|
+|Pull:(|`,`|`,`|pulls one stack value to the top of the stack that is whatever is on top of the stack deep. `,` mostly exists to make complex stack manipulation tasks faster to write. using dip and undip is generaly prefered.|
 
 Pull example
 

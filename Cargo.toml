@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-regex = "1.11.1"
-svg = "0.18.0"
 text_io = "0.1.13"
-turtle = {git = "https://github.com/sunjay/turtle"}
+raylib = "5.5.1"
+structopt = "0.3.26"
