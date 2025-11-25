@@ -22,8 +22,8 @@
 
 ## third batch:
 - dip and undip
-- pull
 - while loop
+- functions?
 
 ## later:
 > more question marks means less likely that it happens
