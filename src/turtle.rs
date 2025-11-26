@@ -84,7 +84,7 @@ impl Turtle {
         }
     }
     pub fn set_color(&mut self, r: u8, g: u8, b: u8) {
-        self.curr.color = TurtleColor::new(r, b, g);
+        self.curr.color = TurtleColor::new(r, g, b);
     }
     pub fn set_pen_size(&mut self, s: f32) {
         self.curr.pen_size = s;
@@ -92,8 +92,11 @@ impl Turtle {
     pub fn set_turn_mode(&mut self, m: TurnModes) {
         self.turn_mode = m;
     }
-    pub fn turn(&mut self, angle: f32) {
-        self.direction = (self.direction.clone() + angle)
+    pub fn turn(&mut self, mut angle: f32) {
+        if self.using_degrees() {
+            angle = Self::deg_to_rad(angle)
+        }
+        self.direction = self.direction.clone() + angle
     }
     pub fn forward(&mut self, amount: f32) {
         self.travel_dist = amount;
@@ -113,21 +116,21 @@ impl Turtle {
     pub fn get_history(&self) -> Vec<TurtleHistoryFrame> {
         self.history.clone()
     }
-    fn deg_to_rad(x: f32) -> f32 {
+    pub fn deg_to_rad(x: f32) -> f32 {
         x * (THE_NUMBER_OF_RADIANS_IN_A_CIRCLE / THE_NUMBER_OF_DEGREES_IN_A_CIRCLE)
+    }
+    pub fn polar_to_rect(r: f32, theta: f32) -> Point {
+        let newx = theta.cos() * r;
+        let newy = theta.sin() * r;
+        return Point::new(newx, newy);
     }
     pub fn push(&mut self) {
         //convert direction+travel dist to x,y translation
-        if self.turn_mode == TurnModes::DEGREE {
-            self.direction = Self::deg_to_rad(self.direction.clone());
-        }
-        let newx = self.direction.cos() * self.travel_dist;
-
-        let newy = self.direction.sin() * self.travel_dist;
-        self.curr.end_pos = Point::new(self.curr.start_pos.x + newx, self.curr.start_pos.y + newy);
-        println!("{}", newx);
-        println!("{}", newy);
-        println!("{:?}", self.curr.end_pos);
+        let translation = Self::polar_to_rect(self.travel_dist, self.direction);
+        self.curr.end_pos = Point::new(
+            self.curr.start_pos.x + translation.x,
+            self.curr.start_pos.y + translation.y,
+        );
         let mut new = self.curr.clone();
         if !self.pen_state {
             new.pen_size = 0.0;
@@ -139,6 +142,9 @@ impl Turtle {
             color: self.curr.clone().color,       //move color forward
             pen_size: self.curr.clone().pen_size, //move pen size forward
         }
+    }
+    pub fn should_render(&self) -> bool {
+        self.history.len() != 0
     }
     pub fn render(self) {
         let (mut rl, thread) = raylib::init()
@@ -172,4 +178,23 @@ impl Turtle {
             };
         }
     }
+}
+
+#[test]
+fn deg_to_rad_test() {
+    for i in 0..=24 {
+        println!(
+            "{} should approxamatly equal {}",
+            i as f32 * THE_NUMBER_OF_RADIANS_IN_A_CIRCLE / 24.0,
+            Turtle::deg_to_rad(i as f32 * 15.0)
+        );
+    }
+    //assert!(false); //uncomment to see output
+}
+
+#[test]
+fn polar_to_rect_test() {
+    assert_eq!(Point::new(0.0, 0.0), Turtle::polar_to_rect(0.0, 0.0));
+    assert_eq!(Point::new(1.0, 0.0), Turtle::polar_to_rect(1.0, 0.0));
+    //assert_eq!(Point::new(0.0,1.0),Turtle::polar_to_rect(1.0,THE_NUMBER_OF_RADIANS_IN_A_CIRCLE/4.0)); //works just fine, its just that -4.371139e-8!=0
 }

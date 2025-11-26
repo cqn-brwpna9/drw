@@ -208,6 +208,7 @@ fn main() {
     } else {
         println!("{}", ast_to_pass.unwrap_err());
     }
-    println!("{:?}", drawing_turtle.get_history());
-    drawing_turtle.render()
+    if drawing_turtle.should_render() {
+        drawing_turtle.render();
+    }
 }
