@@ -4,6 +4,5 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-text_io = "0.1.13"
 raylib = "5.5.1"
 structopt = "0.3.26"

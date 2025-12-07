@@ -18,16 +18,26 @@
 - the rest of the pen commands
 
 ## right now:
+### Done
 - movement to a homespun, faster turtle backend 
 
 ## third batch:
+#### Done
 - dip and undip
+#### Done
 - while loop
-- functions?
-
-## later:
-> more question marks means less likely that it happens
+#### Not done
+- functions
+#### Not done
+- boxes
+#### Not done
 - formatter
+
+## later(may or may not happen):
+> more question marks means less likely that it happens
+- imports
+> would not be too hard, just prepend to input
 - alingual docs?
-- a raylib, actually implemented ide turtle thing???
-- website/tio thing??????????????????????
+> I probably would be bad at this
+- a raylib, actually implemented IDE turtle thing??
+> This is my end goal for drw, allowing a nicer, more live-coding educational type of thing

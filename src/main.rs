@@ -1,7 +1,5 @@
-use std::fs::File;
-use std::io::BufReader;
-use std::io::prelude::*;
-use text_io::read as readin;
+use std::env;
+use std::fs;
 mod ast;
 mod stack;
 mod turtle;
@@ -11,14 +9,10 @@ const EULERS_NUMBER: f64 = 2.7182818284590452;
 const THE_NUMBER_OF_DEGREES_IN_A_CIRCLE: f64 = 360.0;
 
 fn read() -> Result<ast::AST, String> {
-    print!(">");
-    let mut input = Vec::new();
-    let linein: String = readin!("{}\n");
-    let _ = BufReader::new(File::open(linein.as_str()).unwrap()).read_until(b'\0', &mut input);
-    let _ = input.pop(); //take off the ending null charicter
-    return ast::AST::new(
-        String::from_utf8(input).unwrap_or("Hey, theres somthing wrong with that file".to_string()),
-    );
+    let input: String = env::args().collect::<Vec<String>>()[1].clone();
+    let mut program = fs::read_to_string(input).expect("Should have been able to read the file");
+    let _ = program.pop();
+    return ast::AST::new(program);
 }
 
 fn eval(
@@ -166,9 +160,9 @@ fn evallist(
                         data_stack.push(0.);
                     }
                 }
-                _ => panic!(
-                    "You somehow made an nonsense ASTnode. Good job! If you are getting this error and you have not messed with the code, I really don't know what's going on. If you have, you made the issue. Be sure to impliment all ast node types in main.rs"
-                ), //Everything should be matched
+                ast::Commands::DipCommand => data_stack.dip(dip_stack),
+                ast::Commands::UndipCommand => dip_stack.dip(data_stack),
+                _ => unreachable!(),
             },
             ast::ASTnodeType::ControlStructure => match node.structure.unwrap() {
                 ast::ControlStructures::RepeatLoop => {
@@ -182,7 +176,16 @@ fn evallist(
                         );
                     }
                 }
-                ast::ControlStructures::WhileLoop | ast::ControlStructures::DipBlock => todo!(),
+                ast::ControlStructures::WhileLoop => {
+                    while data_stack.pop().unwrap() as f64 != 0.0 {
+                        evallist(
+                            node.children.clone().unwrap(),
+                            data_stack,
+                            dip_stack,
+                            drawing_turtle,
+                        );
+                    }
+                }
             },
             ast::ASTnodeType::Container => todo!(),
         }

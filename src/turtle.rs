@@ -113,9 +113,6 @@ impl Turtle {
     pub fn pen_down(&mut self) {
         self.pen_state = true
     }
-    pub fn get_history(&self) -> Vec<TurtleHistoryFrame> {
-        self.history.clone()
-    }
     pub fn deg_to_rad(x: f32) -> f32 {
         x * (THE_NUMBER_OF_RADIANS_IN_A_CIRCLE / THE_NUMBER_OF_DEGREES_IN_A_CIRCLE)
     }

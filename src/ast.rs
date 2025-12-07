@@ -45,13 +45,14 @@ pub enum Commands {
     LessThanCommand,
     GreaterThanCommand,
     EqualCommand,
+    DipCommand,
+    UndipCommand,
 }
 
 #[derive(Clone, PartialEq, Debug)]
 pub enum ControlStructures {
     RepeatLoop,
     WhileLoop,
-    DipBlock,
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -67,7 +68,7 @@ const ALLOWED_CHARS: [char; 45] = [
     '8', '9', '[', ']', '{', '}', '(', ')', 'o', 'r', 'c', 'd', 'u', 's', '?', 'P', 'l', 'e', 'q',
     'S', 'C', 'f', 'R', '>', '<', '=',
 ];
-const CONVERSION_MAP: [(char, Commands); 28] = [
+const CONVERSION_MAP: [(char, Commands); 30] = [
     ('^', Commands::ForwardCommand),
     ('~', Commands::TurnCommand),
     ('.', Commands::DuplicateCommand),
@@ -96,17 +97,18 @@ const CONVERSION_MAP: [(char, Commands); 28] = [
     ('>', Commands::LessThanCommand),
     ('<', Commands::GreaterThanCommand),
     ('=', Commands::EqualCommand),
+    ('(', Commands::DipCommand),
+    (')', Commands::UndipCommand),
 ]; //just use HashMap::from when actually needed
-const BRACK_CONV_MAP: [(char, ControlStructures); 3] = [
+const BRACK_CONV_MAP: [(char, ControlStructures); 2] = [
     ('[', ControlStructures::RepeatLoop),
     ('{', ControlStructures::WhileLoop),
-    ('(', ControlStructures::DipBlock),
 ]; //ditto
-const ALLOWED_COMMANDS: [char; 28] = [
+const ALLOWED_COMMANDS: [char; 30] = [
     '^', '~', '.', ':', 'p', '+', '-', '*', '/', '%', 'o', 'r', 'c', 'd', 'u', 's', '?', 'P', 'l',
-    'e', 'q', 'S', 'C', 'f', 'R', '>', '<', '=',
+    'e', 'q', 'S', 'C', 'f', 'R', '>', '<', '=', '(', ')',
 ];
-const ALLOWED_BRACKETS: [char; 6] = ['[', ']', '{', '}', '(', ')'];
+const ALLOWED_BRACKETS: [char; 4] = ['[', ']', '{', '}'];
 const NUMBER_CHARS: [char; 10] = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
 fn verify(code_in: String) -> Result<Vec<char>, String> {
@@ -119,21 +121,18 @@ fn verify(code_in: String) -> Result<Vec<char>, String> {
             if i == j {
                 out.push(i);
                 appended = true;
-                if i == '(' || i == '{' || i == '[' {
+                if i == '{' || i == '[' {
                     bracket_check_stack.push(i);
                 }
                 peek_bracket = match bracket_check_stack.peek() {
                     Some(n) => *n,
                     None => ' ',
                 };
-                if (i == ')' && peek_bracket == '(')
-                    || (i == '}' && peek_bracket == '{')
-                    || (i == ']' && peek_bracket == '[')
-                {
+                if (i == '}' && peek_bracket == '{') || (i == ']' && peek_bracket == '[') {
                     let _throwaway = bracket_check_stack.pop();
                     break;
                 }
-                if i == ')' || i == ']' || i == '}' {
+                if i == ']' || i == '}' {
                     return Err("Mismached brackets".to_string());
                 }
                 break;
@@ -205,15 +204,13 @@ impl ASTnode {
                         if bracket_depth == 0 {
                             break;
                         }
-                        bracket_depth +=
-                            if current_pos == ')' || current_pos == ']' || current_pos == '}' {
-                                -1
-                            } else if current_pos == '(' || current_pos == '{' || current_pos == '['
-                            {
-                                1
-                            } else {
-                                0
-                            };
+                        bracket_depth += if current_pos == ']' || current_pos == '}' {
+                            -1
+                        } else if current_pos == '{' || current_pos == '[' {
+                            1
+                        } else {
+                            0
+                        };
                         code_to_push.push(current_pos);
                         idx += 1;
                     }
@@ -279,14 +276,14 @@ fn verify_test() {
     assert_eq!(should_not_work.is_ok(), false);
     println!("testing [}}");
     assert_eq!(verify("[}".to_string()).is_ok(), false);
-    println!("testing ({{)}}");
-    assert_eq!(verify("({)}".to_string()).is_ok(), false);
+    println!("testing [{{]}}");
+    assert_eq!(verify("[{]}".to_string()).is_ok(), false);
     println!("testing []");
     assert_eq!(verify("[]".to_string()).is_ok(), true);
-    println!("testing {{}}{{()[]}}");
-    assert_eq!(verify("{}{()[]}".to_string()).is_ok(), true);
-    println!("testing [{{()}}]"); //the extra {} are for format! 
-    assert_eq!(verify("[{()}]".to_string()).is_ok(), true);
+    println!("testing {{}}{{{{}}[]}}");
+    assert_eq!(verify("{}{{}[]}".to_string()).is_ok(), true);
+    println!("testing [{{[]}}]"); //the extra {} are for format! 
+    assert_eq!(verify("[{[]}]".to_string()).is_ok(), true);
 }
 #[test]
 fn astnew_test() {
