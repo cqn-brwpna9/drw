@@ -1,5 +1,7 @@
 use crate::stack;
 use std::collections::HashMap;
+
+
 #[derive(Clone, PartialEq, Debug)]
 pub struct AST {
     pub node: ASTnode,
@@ -47,6 +49,8 @@ pub enum Commands {
     EqualCommand,
     DipCommand,
     UndipCommand,
+    BoxCommand,
+    UnboxCommand,
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -63,12 +67,14 @@ pub enum ASTnodeType {
     Number,
 }
 
-const ALLOWED_CHARS: [char; 45] = [
+
+const ALLOWED_CHARS: [char; 47] = [
     '^', '~', '.', ':', 'p', '+', '-', '*', '/', '%', ' ', '0', '1', '2', '3', '4', '5', '6', '7',
     '8', '9', '[', ']', '{', '}', '(', ')', 'o', 'r', 'c', 'd', 'u', 's', '?', 'P', 'l', 'e', 'q',
-    'S', 'C', 'f', 'R', '>', '<', '=',
+    'S', 'C', 'f', 'R', '>', '<', '=', 'B', 'U',
 ];
-const CONVERSION_MAP: [(char, Commands); 30] = [
+
+const CONVERSION_MAP: [(char, Commands); 32] = [
     ('^', Commands::ForwardCommand),
     ('~', Commands::TurnCommand),
     ('.', Commands::DuplicateCommand),
@@ -99,15 +105,20 @@ const CONVERSION_MAP: [(char, Commands); 30] = [
     ('=', Commands::EqualCommand),
     ('(', Commands::DipCommand),
     (')', Commands::UndipCommand),
+    ('B', Commands::BoxCommand),
+    ('U', Commands::UnboxCommand),
 ]; //just use HashMap::from when actually needed
+
 const BRACK_CONV_MAP: [(char, ControlStructures); 2] = [
     ('[', ControlStructures::RepeatLoop),
     ('{', ControlStructures::WhileLoop),
 ]; //ditto
-const ALLOWED_COMMANDS: [char; 30] = [
+
+const ALLOWED_COMMANDS: [char; 32] = [
     '^', '~', '.', ':', 'p', '+', '-', '*', '/', '%', 'o', 'r', 'c', 'd', 'u', 's', '?', 'P', 'l',
-    'e', 'q', 'S', 'C', 'f', 'R', '>', '<', '=', '(', ')',
+    'e', 'q', 'S', 'C', 'f', 'R', '>', '<', '=', '(', ')', 'B', 'U',
 ];
+
 const ALLOWED_BRACKETS: [char; 4] = ['[', ']', '{', '}'];
 const NUMBER_CHARS: [char; 10] = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 

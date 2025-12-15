@@ -30,9 +30,9 @@ A feature will have :( by it if it is unimplemented
 |Dip and undip|`(` and `)`|`(` and `)`| `(` temporarily pops the top stack value to an inaccessible stack that can be thought of as "above" the main stack. `)` pushes one value from the upper stack.|
 |Pop|`p`|`◌`|Discards the top stack value.|
 |Debug print|`?`|`?`|Print out the whole stack without popping it.|
-|Box and Unbox:(|`B` and `U`|`〚` and `〛`|`〚` takes three numbers off the stack and combines them into a "box" which can be manipulated just like any value on the stack. Boxes do not support any other operations except coloring, which can either take three integers in [0, 256) or one box with all contained values in [0, 256). `〛` puts the three values in a box back on the stack. Boxes mostly exist to make color manipulation code less annoying|
+|Box and Unbox|`B` and `U`|`〚` and `〛`|`〚` takes three numbers off the stack and combines them into a "box" which can be manipulated just like any value on the stack. Boxes do not support any other operations except coloring, which can either take three integers in [0, 256) or one box with all contained values in [0, 256). `〛` puts the three values in a box back on the stack. Boxes mostly exist to make color manipulation code less annoying|
 
-Without boxes duplicating a color would be a horrible, unreadable string of duplicates, flips and dips. After boxes it is `〚.` With `(〛)〛` to unbox the colors.
+Without boxes duplicating a color would be a horrible, unreadable string of duplicates, flips and dips. With boxes it is `〚.` With `(〛)〛` to unbox the colors.
 
 
 ### Math commands
