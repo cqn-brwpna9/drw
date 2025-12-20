@@ -31,8 +31,6 @@
 #### Done
 - boxes
 #### Not done
-- formatter
-#### Not done
 - error handling
 
 ## later(may or may not happen):
