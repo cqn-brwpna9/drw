@@ -17,7 +17,7 @@
 - the rest of the math commands
 - the rest of the pen commands
 
-## right now:
+## second and a half batch:
 ### Done
 - movement to a homespun, faster turtle backend 
 
@@ -26,17 +26,24 @@
 - dip and undip
 #### Done
 - while loop
-#### Not done
+#### Done
 - functions
 #### Done
 - boxes
 #### Not done
 - error handling
+#### Not done
+- comments
+> Just #....
+#### Not done
+- syntax highlighting
+> Only for nano. Sorry-not-sorry
+#### Not done
+- imports
+> Some kind of meta-syntax/interpreter arguments/semantic comments. interpreter doesnt (and wont) have strings so must be not an actual command
 
 ## later(may or may not happen):
 > more question marks means less likely that it happens
-- imports
-> would not be too hard, just prepend to input
 - alingual docs?
 > I probably would be bad at this
 - a raylib, actually implemented IDE turtle thing??

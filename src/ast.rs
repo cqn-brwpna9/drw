@@ -1,7 +1,6 @@
 use crate::stack;
 use std::collections::HashMap;
 
-
 #[derive(Clone, PartialEq, Debug)]
 pub struct AST {
     pub node: ASTnode,
@@ -14,6 +13,7 @@ pub struct ASTnode {
     pub command: Option<Commands>,
     pub structure: Option<ControlStructures>,
     pub number: Option<f64>,
+    pub function: Option<char>, //named refrence for lazy evaluation and, therefore, recursion
     pub children: Option<Vec<ASTnode>>,
 }
 
@@ -65,8 +65,8 @@ pub enum ASTnodeType {
     Command,
     ControlStructure,
     Number,
+    Function,
 }
-
 
 const ALLOWED_CHARS: [char; 47] = [
     '^', '~', '.', ':', 'p', '+', '-', '*', '/', '%', ' ', '0', '1', '2', '3', '4', '5', '6', '7',
@@ -122,7 +122,7 @@ const ALLOWED_COMMANDS: [char; 32] = [
 const ALLOWED_BRACKETS: [char; 4] = ['[', ']', '{', '}'];
 const NUMBER_CHARS: [char; 10] = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
-fn verify(code_in: String) -> Result<Vec<char>, String> {
+fn verify(code_in: String, functions: Vec<char>) -> Result<Vec<char>, String> {
     let mut out = Vec::new();
     let mut appended = false;
     let mut bracket_check_stack: stack::Stack<char> = stack::Stack::new();
@@ -149,8 +149,15 @@ fn verify(code_in: String) -> Result<Vec<char>, String> {
                 break;
             }
         }
+        for j in &functions {
+            if i == *j {
+                out.push(i);
+                appended = true;
+                break;
+            }
+        }
         if !appended {
-            return Err(format!("{i} is not a valid command").to_string());
+            return Err(format!("{i} is not a valid command or named function").to_string());
         }
         appended = false;
     }
@@ -160,8 +167,8 @@ fn verify(code_in: String) -> Result<Vec<char>, String> {
     return Ok(out);
 }
 impl AST {
-    pub fn new(code_in: String) -> Result<Self, String> {
-        let code_verified: Result<Vec<char>, String> = verify(code_in.clone());
+    pub fn new(code_in: String, functions: Vec<char>) -> Result<Self, String> {
+        let code_verified: Result<Vec<char>, String> = verify(code_in.clone(), functions.clone());
         if !code_verified.is_ok() {
             return Err(code_verified.unwrap_err()); //propagate the error to the repl
         }
@@ -171,9 +178,10 @@ impl AST {
             command: None,
             structure: None,
             number: None,
+            function: None,
             children: Some(Vec::new()),
         };
-        head_node.populate_children(code_unwrapped);
+        head_node.populate_children(code_unwrapped, functions);
         let new_ast = AST {
             code: code_in,
             node: head_node,
@@ -182,7 +190,7 @@ impl AST {
     }
 }
 impl ASTnode {
-    pub fn populate_children(&mut self, code_in: Vec<char>) {
+    pub fn populate_children(&mut self, code_in: Vec<char>, functions: Vec<char>) {
         let conversion_map: HashMap<char, Commands> = HashMap::from(CONVERSION_MAP);
         let brack_conv_map: HashMap<char, ControlStructures> = HashMap::from(BRACK_CONV_MAP);
         let mut idx = 0;
@@ -197,6 +205,7 @@ impl ASTnode {
                         command: Some(conversion_map.get(&token).unwrap().clone()),
                         structure: None,
                         number: None,
+                        function: None,
                         children: None,
                     });
                     idx += 1;
@@ -231,9 +240,10 @@ impl ASTnode {
                         command: None,
                         structure: Some(brack_conv_map.get(&token).unwrap().clone()),
                         number: None,
+                        function: None,
                         children: Some(Vec::new()),
                     };
-                    new_ast_node.populate_children(code_to_push);
+                    new_ast_node.populate_children(code_to_push, functions.clone());
                     self.children.as_mut().unwrap().push(new_ast_node);
                     continue 'token_loop;
                 }
@@ -261,8 +271,24 @@ impl ASTnode {
                         command: None,
                         structure: None,
                         number: Some(topush),
+                        function: None,
                         children: None,
                     });
+                    continue 'token_loop;
+                }
+            }
+            for fun in &functions {
+                if token == *fun {
+                    //dealing with a function
+                    self.children.as_mut().unwrap().push(ASTnode {
+                        nodetype: ASTnodeType::Function,
+                        command: None,
+                        structure: None,
+                        number: None,
+                        function: Some(token),
+                        children: None,
+                    });
+                    idx += 1;
                     continue 'token_loop;
                 }
             }
