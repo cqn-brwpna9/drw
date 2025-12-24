@@ -40,7 +40,7 @@
 > Only for nano. Sorry-not-sorry
 #### Not done
 - imports
-> Some kind of meta-syntax/interpreter arguments/semantic comments. interpreter doesnt (and wont) have strings so must be not an actual command
+> Some kind of meta-syntax/interpreter arguments/semantic comments. drw doesnt (and wont) have strings so must be not an actual command
 
 ## later(may or may not happen):
 > more question marks means less likely that it happens

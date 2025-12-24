@@ -1,0 +1,27 @@
+# Syntax highlighting for drw
+
+syntax drw "\.drw"
+# not implemented yet
+comment "#"
+tabgives "  "
+
+# This is HEAVLY based off of uiua formatting/highliting
+
+# Numbers
+color orange "[0-9]"
+
+# Nilads
+color brightred "[ordu?e]"
+
+# Monads
+# Boxes and colors are considered monadic because they are working on a single unit of data, even if it is multiple elements
+color brightgreen "[\^~cs.p()BUqSCfR]"
+
+# Dyads
+color brightblue "(:|\+|\-|\*|\/|\%|P|l|<|>|=)"
+
+# Loops
+color brightyellow "(\[|\]|\{|\})"
+
+# Function binding
+color purple "_"
