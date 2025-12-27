@@ -35,7 +35,15 @@
 #### Not done
 - comments
 > Just #....
-#### Not done
+> Whole line only
+##### Not good:
+`4[100^90~]#draws a square`
+##### Good:
+```
+4[100^90~]
+# draws a square
+```
+#### Done
 - syntax highlighting
 > Only for nano. Sorry-not-sorry
 #### Not done

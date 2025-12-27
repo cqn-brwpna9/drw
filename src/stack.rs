@@ -18,6 +18,7 @@ where
     pub fn is_empty(&self) -> bool {
         self.stack.is_empty()
     }
+    #[cfg(test)]
     pub fn length(&self) -> usize {
         self.stack.len()
     }

@@ -268,7 +268,8 @@ fn main() {
     let mut data_stack: stack::Stack<item::Item> = stack::Stack::new();
     let mut dip_stack: stack::Stack<item::Item> = stack::Stack::new();
     let mut drawing_turtle = turtle::Turtle::new();
-    let mut asts_to_pass = read();
+    
+    let asts_to_pass = read();
     if asts_to_pass.0.is_ok() {
         print(eval(
             asts_to_pass.0.unwrap(),

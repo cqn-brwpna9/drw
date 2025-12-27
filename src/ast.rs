@@ -301,30 +301,30 @@ impl ASTnode {
 
 #[test]
 fn verify_test() {
-    let should_work_tokens: Result<Vec<char>, String> = verify("4[5^90~]".to_string());
+    let should_work_tokens: Result<Vec<char>, String> = verify("4[5^90~]".to_string(), Vec::new());
     println!("testing 4[5^90~]");
     assert_eq!(
         vec!['4', '[', '5', '^', '9', '0', '~', ']'],
         should_work_tokens.unwrap()
     );
-    assert_eq!(verify("4[|5^90~]".to_string()).is_ok(), false);
-    let should_not_work: Result<Vec<char>, String> = verify("[]]".to_string());
+    assert_eq!(verify("4[|5^90~]".to_string(), Vec::new()).is_ok(), false);
+    let should_not_work: Result<Vec<char>, String> = verify("[]]".to_string(), Vec::new());
     println!("testing []]");
     assert_eq!(should_not_work.is_ok(), false);
     println!("testing [}}");
-    assert_eq!(verify("[}".to_string()).is_ok(), false);
+    assert_eq!(verify("[}".to_string(), Vec::new()).is_ok(), false);
     println!("testing [{{]}}");
-    assert_eq!(verify("[{]}".to_string()).is_ok(), false);
+    assert_eq!(verify("[{]}".to_string(), Vec::new()).is_ok(), false);
     println!("testing []");
-    assert_eq!(verify("[]".to_string()).is_ok(), true);
+    assert_eq!(verify("[]".to_string(), Vec::new()).is_ok(), true);
     println!("testing {{}}{{{{}}[]}}");
-    assert_eq!(verify("{}{{}[]}".to_string()).is_ok(), true);
+    assert_eq!(verify("{}{{}[]}".to_string(), Vec::new()).is_ok(), true);
     println!("testing [{{[]}}]"); //the extra {} are for format! 
-    assert_eq!(verify("[{[]}]".to_string()).is_ok(), true);
+    assert_eq!(verify("[{[]}]".to_string(), Vec::new()).is_ok(), true);
 }
 #[test]
 fn astnew_test() {
-    let should_work: Result<AST, String> = AST::new("2 2+[5^90~]".to_string());
+    let should_work: Result<AST, String> = AST::new("2 2+[5^90~]".to_string(), Vec::new());
     assert_eq!(should_work.is_ok(), true);
     assert_eq!(
         should_work.unwrap().node.children.clone().unwrap()[2],
@@ -333,10 +333,11 @@ fn astnew_test() {
             command: Some(Commands::AddCommand),
             structure: None,
             number: None,
+            function: None,
             children: None,
         }
     );
-    let should_work: Result<AST, String> = AST::new("4[5^90~]".to_string());
+    let should_work: Result<AST, String> = AST::new("4[5^90~]".to_string(), Vec::new());
     assert_eq!(
         should_work.unwrap().node.children.clone().unwrap()[0],
         ASTnode {
@@ -344,10 +345,11 @@ fn astnew_test() {
             command: None,
             structure: None,
             number: Some(4.0),
+            function: None,
             children: None,
         }
     );
-    let should_work: Result<AST, String> = AST::new("91".to_string());
+    let should_work: Result<AST, String> = AST::new("91".to_string(), Vec::new());
     assert_eq!(
         should_work.unwrap().node.children.clone().unwrap()[0],
         ASTnode {
@@ -355,10 +357,11 @@ fn astnew_test() {
             command: None,
             structure: None,
             number: Some(91.0),
+            function: None,
             children: None,
         }
     );
-    let should_work: Result<AST, String> = AST::new("2[180~3[10^90~]]".to_string());
+    let should_work: Result<AST, String> = AST::new("2[180~3[10^90~]]".to_string(), Vec::new());
     assert_eq!(
         should_work.unwrap().node.children.clone().unwrap()[1]
             .children
@@ -373,6 +376,7 @@ fn astnew_test() {
             structure: None,
             number: None,
             children: None,
+            function: None,
         }
     );
 }
