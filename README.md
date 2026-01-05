@@ -30,8 +30,15 @@ A feature will have :( by it if it is unimplemented
 |Dip and undip|`(` and `)`| `(` temporarily pops the top stack value to an inaccessible stack that can be thought of as "above" the main stack. `)` pushes one value from the upper stack.|
 |Pop|`p`|Discards the top stack value.|
 |Debug print|`?`|Print out the whole stack without popping it.|
-|Box and Unbox|`B` and `U`|`B` takes three numbers off the stack and combines them into a "box" which can be manipulated just like any value on the stack. Boxes do not support any other operations except coloring, which can either take three integers in [0, 256) or one box with all contained values in [0, 256). `U` puts the three values in a box back on the stack. Boxes mostly exist to make color manipulation code less annoying|
 
+### Box commands
+
+|Name|Symbol|Description|
+|---|---|---|
+|Box|`B`|Takes three numbers, although it will soon also be able to take boxes as well, off the stack and combines them into a "box" which can be manipulated just like any value on the stack. Boxes do not support any other operations except coloring currently, although this will change later, which can either take three integers in [0, 256) or one box with all contained values in [0, 256).|
+|Unbox|`U`|Puts the three values in a box back on the stack.|
+|Is box:(|`I`|Pushes 1 if the value on top of the stack is a box, 0 otherwise. Does not consume its argument.|
+ 
 Without boxes duplicating a color would be not easy. With boxes it is `B.` and `(U)U` to unbox the colors.
 
 
@@ -74,3 +81,17 @@ Result: `a%b`
 |Repeat loop|`[...]`|Pops one number off the stack, and executes the code within that many times.|
 |While loop|`{...}`|Executes the code within `{...}` until `0` is on top of the stack when the code within `{...}` is finished running. Also pops off at the opening `{` and checks for zero. Can be used as an if statement by `<Conditonal>{<whatever code>0}`.|
 |Function binding |`_`|Defines a function, which can be called from anywhere and take and return any number of arguments. The number of arguments can even be differing depending on the function's other arguments. Looks like `𝕗_<function body>`. Drw will just run the first non-function line in a program, then any other non-function lines after that. A function line starts with a name and `_`. A function is called by its name. A name is one Unicode codepoint (not grapheme) that is not a builtin. Builtins are `^~.:p+-*/%[]{}()orcdus?PleqSCfR><=BU_`|
+
+### Drw's EBNF Syntax:
+
+```
+<program> <= {<line>};
+<line> <= <function_definiton>|<code_line>;
+<function_definiton> <= <function_name>, "_", <code_line>;
+<function_name> <= ?any unicode codepoint? - <builtin>;
+<code_line> <= {<builtin>|<number>|<function_name>|<loop>};
+<loop> <= "{", <code_line>, "}"| "[", <code_line>, "]";
+<number> <= {<digit>};
+<digit> <= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
+<builtin> <= "^"| "~"| "."| ":"| "p"| "+"| "-"| "*"| "/"| "%"| " "| "0"| "1"| "2"| "3"| "4"| "5"| "6"| "7"|"8"| "9"| "["| "]"| "{"| "}"| "("| ")"| "o"| "r"| "c"| "d"| "u"| "s"| "?"| "P"| "l"| "e"| "q"|"S"| "C"| "f"| "R"| ">"| "<"| "="| "B"| "U";
+```
