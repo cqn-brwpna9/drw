@@ -1,2 +1,4 @@
-F_5[50^90~5^90~50^270~5^270~]
-F50^270~50^180~F
+F_5[50^90~5^90~50^270~5^270~] # draws a bunch of lines 
+F
+50^270~50^180~ # repostitions the turtle and turns it
+F

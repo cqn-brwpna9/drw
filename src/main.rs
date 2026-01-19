@@ -18,15 +18,28 @@ fn read() -> (Result<ast::AST, String>, HashMap<char, ast::AST>) {
     let mut non_function: Vec<String> = Vec::new();
     for line in program.lines() {
         let line_chars: Vec<char> = line.chars().collect();
-        if line_chars[1] == '_' {
-            //Is function
-            functions.insert(
-                line_chars[0],
-                line_chars[2..].to_vec().into_iter().collect(),
-            );
+        let mut line_chars_no_comments: Vec<char> = Vec::new();
+        for i in line_chars{
+            if i=='#'{
+                break;//we've found ourselves a comment
+            }
+            line_chars_no_comments.push(i)
+
+        }
+        if line_chars_no_comments.len() == 1 || line_chars_no_comments.len() == 0{
+            //is (short) line of code
+            non_function.push(line_chars_no_comments.into_iter().collect());
         } else {
-            //is line of code
-            non_function.push(line.to_string());
+            if line_chars_no_comments[1] == '_' {
+                //Is function
+                functions.insert(
+                    line_chars_no_comments[0],
+                    line_chars_no_comments[2..].to_vec().into_iter().collect(),
+                );
+            } else {
+                //is line of code
+                non_function.push(line_chars_no_comments.into_iter().collect());
+            }
         }
     }
     let main_code = non_function.join(" ");

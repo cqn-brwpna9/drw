@@ -1,7 +1,6 @@
 # Syntax highlighting for drw
 
 syntax drw "\.drw"
-# not implemented yet
 comment "#"
 tabgives "  "
 
@@ -25,3 +24,6 @@ color brightyellow "(\[|\]|\{|\})"
 
 # Function binding
 color purple "_"
+
+# Comments
+color grey "#.*"

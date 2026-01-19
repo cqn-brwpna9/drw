@@ -1,1 +1,5 @@
-0 255 0 c 1 50[6[.^60~]2+.5*255:% 255 0 c]
+0 255 0 c # set inital pen color
+1 50[ # repeat fifty times
+  6[.^60~]2+ # draw a hexagon of the current size on the stack and increase the size 
+  .5*255:% 255 0 c # change the current color based on the size on the stack
+]

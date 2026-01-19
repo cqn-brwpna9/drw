@@ -38,7 +38,7 @@
 > - An id value for each builtin if the stack is empty or at the bottom from dipping(0 for +/-,1 for *,[0 0 0] for  ).
 > - Lisp-Style lists from nested boxes
 > - Some form of operation pervasiveness from boxes (This will probably end up not being pervasive on nested boxes because that's hard. also trying to add `[1 2 [3 [4 5 6] 7]]` to `[1 [2 3 4] 5]` doesnt really make sense.)
-#### Not done
+#### Done
 - comments
 > Just #....
 #### Done
@@ -47,7 +47,7 @@
 > Make your own if you want your own.
 #### Not done
 - imports
-> Some kind of meta-syntax/interpreter arguments/semantic comments. drw doesnt (and wont) have strings so must be not an actual command
+> Some kind of meta-syntax/interpreter arguments/semantic comments. drw doesnt (and wont [I guess you could store a string in the recursive boxes, but theres no printing faclity \<yet\>]) have strings so must be not an actual command
 
 # This is the point at which Drw will be considered 0.1.0 under [Semantic Versioning](https://semver.org)
 
