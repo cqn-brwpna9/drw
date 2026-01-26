@@ -78,8 +78,8 @@ Result: `a%b`
 
 |Name|Symbol|Description|
 |---|---|---|
-|Repeat loop|`[...]`|Pops one number off the stack, and executes the code within that many times.|
-|While loop|`{...}`|Executes the code within `{...}` until `0` is on top of the stack when the code within `{...}` is finished running. Also pops off at the opening `{` and checks for zero. Can be used as an if statement by `<Conditonal>{<whatever code>0}`.|
+|Repeat loop|`[...]`|Pops one number off the stack, and executes the code within that many times. Can be used as an if statement by `<Conditonal>[<whatever code>]`.|
+|While loop|`{...}`|Executes the code within `{...}` until `0` is on top of the stack when the code within `{...}` is finished running. Also pops off at the opening `{` and checks for zero.|
 |Function binding |`_`|Defines a function, which can be called from anywhere and take and return any number of arguments. The number of arguments can even be differing depending on the function's other arguments. Looks like `𝕗_<function body>`. Drw will just run the first non-function line in a program, then any other non-function lines after that. A function line starts with a name and `_`. A function is called by its name. A name is one Unicode codepoint (not grapheme) that is not a builtin. Builtins are `^~.:p+-*/%[]{}()orcdus?PleqSCfR><=BU_`|
 
 ### Drw's EBNF Syntax:
