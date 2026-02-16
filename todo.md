@@ -32,12 +32,20 @@
 - boxes
 #### Not done
 - error handling
-> This means "any syntactcally valid code causes no runtime errors because runtime error don't exist" a la [Decker](https://github.com/JohnEarnest/Decker)
+> This means "any syntactcally valid code causes ~~no~~ *minimal* runtime errors because runtime errors *mostly* don't exist" a la [Decker](https://github.com/JohnEarnest/Decker)
 > 
 > Therefore we have:
-> - An id value for each builtin if the stack is empty or at the bottom from dipping(0 for +/-,1 for *,[0 0 0] for  ).
-> - Lisp-Style lists from nested boxes
-> - Some form of operation pervasiveness from boxes (This will probably end up not being pervasive on nested boxes because that's hard. also trying to add `[1 2 [3 [4 5 6] 7]]` to `[1 [2 3 4] 5]` doesnt really make sense.)
+> - [x] An id value for each builtin if the stack is empty or at the bottom from dipping(0 for +/-,1 for *,[0 0 0] for B)
+> - [ ] Lisp-Style lists from nested boxes
+> - [ ] Operation pervasiveness for boxes
+> There are 2 possible types of runtime errors:
+> - "cannot {operator} {arg1} and {arg2}" 
+> This happens when one tries to call a dyadic operator on two nested boxes because trying to add `[1 2 [3 [4 5 6] 7]]` to `[1 [2 3 4] 5]` doesnt really make sense.
+> operators that do not modify their arguments (like `:`) do not have this error
+> - "cannot iterate {arg1} times"
+> This happens when one tries to use a box, negative number or not whole number as the argument to a `[]` loop
+> `{}` loops count any value besides `0`, `[0,0,0]` or any box made of those two values as truthy 
+
 #### Done
 - comments
 > Just #....
@@ -57,3 +65,5 @@
 > I probably would be bad at this
 - a raylib, actually implemented IDE turtle thing??
 > This is my end goal for drw, allowing a nicer, more live-coding educational type of thing
+- multiple backends?
+> svg, png, the current one, animated, gcode maybe?

@@ -1,0 +1,4 @@
+#every line of this file should panic. Dont run it!
+4 0-[]
+2 1/[]
+B[]

@@ -61,14 +61,21 @@ impl Item {
         if self.itemtype == ItemType::Number {
             return self.number.unwrap();
         } else {
-            panic!("Boxes cannot be operated on");
+            return self.boxed.unwrap().r;
         }
     }
     pub fn get_box(self) -> DrwBox {
         if self.itemtype == ItemType::Box {
             return self.boxed.unwrap();
         } else {
-            panic!("Exepected a box");
+            return DrwBox::new(self.number.unwrap(), 0.0, 0.0);
+        }
+    }
+    pub fn is_truthy(self) -> bool {
+        if self.itemtype == ItemType::Number {
+            return self.number.unwrap() != 0.0;
+        } else {
+            return self.boxed.unwrap() != DrwBox::new(0.0, 0.0, 0.0);
         }
     }
 }

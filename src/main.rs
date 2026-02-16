@@ -19,14 +19,13 @@ fn read() -> (Result<ast::AST, String>, HashMap<char, ast::AST>) {
     for line in program.lines() {
         let line_chars: Vec<char> = line.chars().collect();
         let mut line_chars_no_comments: Vec<char> = Vec::new();
-        for i in line_chars{
-            if i=='#'{
-                break;//we've found ourselves a comment
+        for i in line_chars {
+            if i == '#' {
+                break; //we've found ourselves a comment
             }
             line_chars_no_comments.push(i)
-
         }
-        if line_chars_no_comments.len() == 1 || line_chars_no_comments.len() == 0{
+        if line_chars_no_comments.len() == 1 || line_chars_no_comments.len() == 0 {
             //is (short) line of code
             non_function.push(line_chars_no_comments.into_iter().collect());
         } else {
@@ -57,7 +56,6 @@ fn read() -> (Result<ast::AST, String>, HashMap<char, ast::AST>) {
     let main_ast = ast::AST::new(main_code, function_names);
     return (main_ast, function_asts);
 }
-
 fn eval(
     syntax_tree: ast::AST,
     functions: HashMap<char, ast::AST>,
@@ -89,40 +87,28 @@ fn evallist(
             ast::ASTnodeType::Number => data_stack.push(item::Item::from_num(node.number.unwrap())),
             ast::ASTnodeType::Command => match node.command.unwrap() {
                 ast::Commands::ForwardCommand => {
-                    drawing_turtle.forward(data_stack.pop().unwrap().get_number() as f32);
+                    drawing_turtle.forward(
+                        data_stack
+                            .pop()
+                            .unwrap_or(item::Item::from_num(0.0))
+                            .get_number() as f32,
+                    );
                     drawing_turtle.push();
                 }
-                ast::Commands::TurnCommand => {
-                    drawing_turtle.turn(data_stack.pop().unwrap().get_number() as f32)
-                }
+                ast::Commands::TurnCommand => drawing_turtle.turn(
+                    data_stack
+                        .pop()
+                        .unwrap_or(item::Item::from_num(0.0))
+                        .get_number() as f32,
+                ),
                 ast::Commands::DuplicateCommand => data_stack.dup(),
                 ast::Commands::SwapCommand => data_stack.swap(),
                 ast::Commands::PopCommand => _throwaway = data_stack.pop().unwrap(),
-                ast::Commands::AddCommand => {
-                    let a = data_stack.pop().unwrap().get_number();
-                    let b = data_stack.pop().unwrap().get_number();
-                    data_stack.push(item::Item::from_num(a + b));
-                }
-                ast::Commands::SubtractCommand => {
-                    let a = data_stack.pop().unwrap().get_number();
-                    let b = data_stack.pop().unwrap().get_number();
-                    data_stack.push(item::Item::from_num(a - b));
-                }
-                ast::Commands::MultiplyCommand => {
-                    let a = data_stack.pop().unwrap().get_number();
-                    let b = data_stack.pop().unwrap().get_number();
-                    data_stack.push(item::Item::from_num(a * b));
-                }
-                ast::Commands::DivideCommand => {
-                    let a = data_stack.pop().unwrap().get_number();
-                    let b = data_stack.pop().unwrap().get_number();
-                    data_stack.push(item::Item::from_num(a / b));
-                }
-                ast::Commands::ModuloCommand => {
-                    let a = data_stack.pop().unwrap().get_number();
-                    let b = data_stack.pop().unwrap().get_number();
-                    data_stack.push(item::Item::from_num(a % b));
-                }
+                ast::Commands::AddCommand => dyadic_op(&|a, b| a + b, 0.0, data_stack),
+                ast::Commands::SubtractCommand => dyadic_op(&|a, b| a - b, 0.0, data_stack),
+                ast::Commands::MultiplyCommand => dyadic_op(&|a, b| a * b, 1.0, data_stack),
+                ast::Commands::DivideCommand => dyadic_op(&|a, b| a / b, 1.0, data_stack),
+                ast::Commands::ModuloCommand => dyadic_op(&|a, b| a % b, 1.0, data_stack),
                 ast::Commands::DegreeCommand => {
                     if drawing_turtle.using_degrees() {
                         data_stack.push(item::Item::from_num(THE_NUMBER_OF_DEGREES_IN_A_CIRCLE));
@@ -139,91 +125,71 @@ fn evallist(
                 }
                 ast::Commands::ColorCommand => {
                     if data_stack.peek().unwrap().itemtype == item::ItemType::Number {
-                        let r = data_stack.pop().unwrap().get_number();
-                        let g = data_stack.pop().unwrap().get_number();
-                        let b = data_stack.pop().unwrap().get_number();
+                        let r = data_stack
+                            .pop()
+                            .unwrap_or(item::Item::from_num(255.0))
+                            .get_number();
+                        let g = data_stack
+                            .pop()
+                            .unwrap_or(item::Item::from_num(255.0))
+                            .get_number();
+                        let b = data_stack
+                            .pop()
+                            .unwrap_or(item::Item::from_num(255.0))
+                            .get_number();
                         drawing_turtle.set_color(r as u8, g as u8, b as u8);
                     } else {
-                        let the_box = data_stack.pop().unwrap().get_box();
+                        let the_box = data_stack
+                            .pop()
+                            .unwrap_or(item::Item::from_box(item::DrwBox::new(255.0, 255.0, 255.0)))
+                            .get_box();
                         drawing_turtle.set_color(the_box.r as u8, the_box.g as u8, the_box.b as u8);
                     }
                 }
                 ast::Commands::PenDownCommand => drawing_turtle.pen_down(),
                 ast::Commands::PenUpCommand => drawing_turtle.pen_up(),
-                ast::Commands::SizeCommand => {
-                    drawing_turtle.set_pen_size(data_stack.pop().unwrap().get_number() as f32)
-                }
+                ast::Commands::SizeCommand => drawing_turtle.set_pen_size(
+                    data_stack
+                        .pop()
+                        .unwrap_or(item::Item::from_num(1.0))
+                        .get_number() as f32,
+                ),
                 ast::Commands::DebugCommand => println!("{}", data_stack.to_string()),
-                ast::Commands::PowerCommand => {
-                    let a = data_stack.pop().unwrap().get_number();
-                    let b = data_stack.pop().unwrap().get_number();
-                    data_stack.push(item::Item::from_num(a.powf(b)));
-                }
-                ast::Commands::LogCommand => {
-                    let a = data_stack.pop().unwrap().get_number();
-                    let b = data_stack.pop().unwrap().get_number();
-                    data_stack.push(item::Item::from_num(a.log(b)));
-                }
+                ast::Commands::PowerCommand => dyadic_op(&|a, b| a.powf(b), 1.0, data_stack),
+                ast::Commands::LogCommand => dyadic_op(&|a, b| a.log(b), EULERS_NUMBER, data_stack),
                 ast::Commands::EulerNumCommand => {
                     data_stack.push(item::Item::from_num(EULERS_NUMBER))
                 }
-                ast::Commands::SquareRootCommand => {
-                    let a = data_stack.pop().unwrap().get_number();
-                    data_stack.push(item::Item::from_num(a.sqrt()));
-                }
-                ast::Commands::SineCommand => {
-                    let a = data_stack.pop().unwrap().get_number();
-                    data_stack.push(item::Item::from_num(a.sin()));
-                }
-                ast::Commands::CeilingCommand => {
-                    let a = data_stack.pop().unwrap().get_number();
-                    data_stack.push(item::Item::from_num(a.ceil()));
-                }
-                ast::Commands::FloorCommand => {
-                    let a = data_stack.pop().unwrap().get_number();
-                    data_stack.push(item::Item::from_num(a.floor()));
-                }
-                ast::Commands::RoundCommand => {
-                    let a = data_stack.pop().unwrap().get_number();
-                    data_stack.push(item::Item::from_num(a.round()));
-                }
-                ast::Commands::LessThanCommand => {
-                    let a = data_stack.pop().unwrap().get_number();
-                    let b = data_stack.pop().unwrap().get_number();
-                    if a < b {
-                        data_stack.push(item::Item::from_num(1.));
-                    } else {
-                        data_stack.push(item::Item::from_num(0.));
-                    }
-                }
-                ast::Commands::GreaterThanCommand => {
-                    let a = data_stack.pop().unwrap().get_number();
-                    let b = data_stack.pop().unwrap().get_number();
-                    if a > b {
-                        data_stack.push(item::Item::from_num(1.));
-                    } else {
-                        data_stack.push(item::Item::from_num(0.));
-                    }
-                }
-                ast::Commands::EqualCommand => {
-                    let a = data_stack.pop().unwrap().get_number();
-                    let b = data_stack.pop().unwrap().get_number();
-                    if a == b {
-                        data_stack.push(item::Item::from_num(1.));
-                    } else {
-                        data_stack.push(item::Item::from_num(0.));
-                    }
-                }
+                ast::Commands::SquareRootCommand => monadic_op(&|a| a.sqrt(), 1.0, data_stack),
+                ast::Commands::SineCommand => monadic_op(&|a| a.sin(), 0.0, data_stack),
+                ast::Commands::CeilingCommand => monadic_op(&|a| a.ceil(), 0.0, data_stack),
+                ast::Commands::FloorCommand => monadic_op(&|a| a.floor(), 0.0, data_stack),
+                ast::Commands::RoundCommand => monadic_op(&|a| a.round(), 1.0, data_stack),
+                ast::Commands::LessThanCommand => comp_op(&|a, b| a < b, data_stack),
+                ast::Commands::GreaterThanCommand => comp_op(&|a, b| a > b, data_stack),
+                ast::Commands::EqualCommand => comp_op(&|a, b| a == b, data_stack),
                 ast::Commands::DipCommand => data_stack.dip(dip_stack),
                 ast::Commands::UndipCommand => dip_stack.dip(data_stack),
                 ast::Commands::BoxCommand => {
-                    let r = data_stack.pop().unwrap().get_number();
-                    let g = data_stack.pop().unwrap().get_number();
-                    let b = data_stack.pop().unwrap().get_number();
+                    let r = data_stack
+                        .pop()
+                        .unwrap_or(item::Item::from_num(0.0))
+                        .get_number();
+                    let g = data_stack
+                        .pop()
+                        .unwrap_or(item::Item::from_num(0.0))
+                        .get_number();
+                    let b = data_stack
+                        .pop()
+                        .unwrap_or(item::Item::from_num(0.0))
+                        .get_number();
                     data_stack.push(item::Item::from_box(item::DrwBox::new(r, g, b)));
                 }
                 ast::Commands::UnboxCommand => {
-                    let the_box = data_stack.pop().unwrap().get_box();
+                    let the_box = data_stack
+                        .pop()
+                        .unwrap_or(item::Item::from_box(item::DrwBox::new(0.0, 0.0, 0.0)))
+                        .get_box();
                     data_stack.push(item::Item::from_num(the_box.b));
                     data_stack.push(item::Item::from_num(the_box.g));
                     data_stack.push(item::Item::from_num(the_box.r));
@@ -232,8 +198,20 @@ fn evallist(
             },
             ast::ASTnodeType::ControlStructure => match node.structure.unwrap() {
                 ast::ControlStructures::RepeatLoop => {
-                    let n = data_stack.pop().unwrap().get_number() as i64;
-                    for _ in 0..n {
+                    let n = data_stack.pop().unwrap_or(item::Item::from_num(0.0));
+                    if n.itemtype == item::ItemType::Box {
+                        panic!("Cannot iterate over boxes!\n Got: {n}")
+                    }
+                    let num: f64 = n.get_number();
+                    if num != num.floor() {
+                        panic!("Cannot iterate a non-whole number of times!\n Got: {num}")
+                    }
+                    if num < 0.0 {
+                        panic!(
+                            "Cannot iterate a negative number of times! (this isnt Uiua)\n Got: {num}"
+                        )
+                    }
+                    for _ in 0..num as u64 {
                         evallist(
                             node.children.clone().unwrap(),
                             functions.clone(),
@@ -244,7 +222,7 @@ fn evallist(
                     }
                 }
                 ast::ControlStructures::WhileLoop => {
-                    while data_stack.pop().unwrap().get_number() as f64 != 0.0 {
+                    while data_stack.pop().unwrap().is_truthy() {
                         evallist(
                             node.children.clone().unwrap(),
                             functions.clone(),
@@ -281,7 +259,7 @@ fn main() {
     let mut data_stack: stack::Stack<item::Item> = stack::Stack::new();
     let mut dip_stack: stack::Stack<item::Item> = stack::Stack::new();
     let mut drawing_turtle = turtle::Turtle::new();
-    
+
     let asts_to_pass = read();
     if asts_to_pass.0.is_ok() {
         print(eval(
@@ -296,5 +274,43 @@ fn main() {
     }
     if drawing_turtle.should_render() {
         drawing_turtle.render();
+    }
+}
+fn dyadic_op(f: &dyn Fn(f64, f64) -> f64, default: f64, data_stack: &mut stack::Stack<item::Item>) {
+    let a = data_stack
+        .pop()
+        .unwrap_or(item::Item::from_num(default))
+        .get_number();
+    let b = data_stack
+        .pop()
+        .unwrap_or(item::Item::from_num(default))
+        .get_number();
+    data_stack.push(item::Item::from_num(f(a, b)));
+}
+fn monadic_op(f: &dyn Fn(f64) -> f64, default: f64, data_stack: &mut stack::Stack<item::Item>) {
+    let a = data_stack
+        .pop()
+        .unwrap_or(item::Item::from_num(default))
+        .get_number();
+    data_stack.push(item::Item::from_num(f(a)));
+}
+fn comp_op(f: &dyn Fn(f64, f64) -> bool, data_stack: &mut stack::Stack<item::Item>) {
+    let a = data_stack.pop();
+    let b = data_stack.pop();
+    //comparison operators return false by default
+    match a {
+        Some(a_num) => match b {
+            Some(b_num) => {
+                data_stack.push(item::Item::from_num(
+                    if f(a_num.get_number(), b_num.get_number()) {
+                        1.0
+                    } else {
+                        0.0
+                    },
+                ));
+            }
+            None => data_stack.push(item::Item::from_num(0.0)),
+        },
+        None => data_stack.push(item::Item::from_num(0.0)),
     }
 }
