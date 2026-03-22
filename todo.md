@@ -38,14 +38,25 @@
 > - [x] An id value for each builtin if the stack is empty or at the bottom from dipping(0 for +/-,1 for *,[0 0 0] for B)
 > - [ ] Lisp-Style lists from nested boxes
 > - [ ] Operation pervasiveness for boxes
-> There are 2 possible types of runtime errors:
-> - "cannot {operator} {arg1} and {arg2}" 
-> This happens when one tries to call a dyadic operator on two nested boxes because trying to add `[1 2 [3 [4 5 6] 7]]` to `[1 [2 3 4] 5]` doesnt really make sense.
-> operators that do not modify their arguments (like `:`) do not have this error
+>
+> There are ~~2~~ *1* possible types of runtime errors:
+> ~~- "cannot {operator} {arg1} and {arg2}" ~~
+>
+> ~~This happens when one tries to call a dyadic operator on two nested boxes because trying to add `[1 2 [3 [4 5 6] 7]]` to `[1 [2 3 4] 5]` doesnt really make sense.~~
+>
+> ~~operators that do not modify their arguments (like `:`) do not have this error~~
+>
+> Can actually do this. Will be: `+[a b [c d e]] [[f g [h i j]] k l]`=>`[[f+a g+a [h+a i+a j+a]] k+b [l+c l+d l+e]]`
+>
 > - "cannot iterate {arg1} times"
+>
 > This happens when one tries to use a box, negative number or not whole number as the argument to a `[]` loop
+>
+>
 > `{}` loops count any value besides `0`, `[0,0,0]` or any box made of those two values as truthy 
-
+#### Not done
+- nil/null value
+> A value that means nothing. It will be represented by `,`. is nil will be `;`. It comes from divison by zero, but also will be used for making lists and suchforth much easier. It will not replace id values.
 #### Done
 - comments
 > Just #....
@@ -53,6 +64,7 @@
 - syntax highlighting
 > Only for nano. Sorry-not-sorry
 > Make your own if you want your own.
+> I may make emacs at some point.
 #### Not done
 - imports
 > Some kind of meta-syntax/interpreter arguments/semantic comments. drw doesnt (and wont [I guess you could store a string in the recursive boxes, but theres no printing faclity \<yet\>]) have strings so must be not an actual command
