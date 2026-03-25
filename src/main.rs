@@ -141,9 +141,15 @@ fn evallist(
                     } else {
                         let the_box = data_stack
                             .pop()
-                            .unwrap_or(item::Item::from_box(item::DrwBox::new(255.0, 255.0, 255.0)))
+                            .unwrap_or(item::Item::from_box(item::DrwBox::from_nums(
+                                255.0, 255.0, 255.0,
+                            )))
                             .get_box();
-                        drawing_turtle.set_color(the_box.r as u8, the_box.g as u8, the_box.b as u8);
+                        drawing_turtle.set_color(
+                            the_box.r.get_number() as u8,
+                            the_box.g.get_number() as u8,
+                            the_box.b.get_number() as u8,
+                        );
                     }
                 }
                 ast::Commands::PenDownCommand => drawing_turtle.pen_down(),
@@ -171,28 +177,19 @@ fn evallist(
                 ast::Commands::DipCommand => data_stack.dip(dip_stack),
                 ast::Commands::UndipCommand => dip_stack.dip(data_stack),
                 ast::Commands::BoxCommand => {
-                    let r = data_stack
-                        .pop()
-                        .unwrap_or(item::Item::from_num(0.0))
-                        .get_number();
-                    let g = data_stack
-                        .pop()
-                        .unwrap_or(item::Item::from_num(0.0))
-                        .get_number();
-                    let b = data_stack
-                        .pop()
-                        .unwrap_or(item::Item::from_num(0.0))
-                        .get_number();
+                    let r = data_stack.pop().unwrap_or(item::Item::from_num(0.0));
+                    let g = data_stack.pop().unwrap_or(item::Item::from_num(0.0));
+                    let b = data_stack.pop().unwrap_or(item::Item::from_num(0.0));
                     data_stack.push(item::Item::from_box(item::DrwBox::new(r, g, b)));
                 }
                 ast::Commands::UnboxCommand => {
                     let the_box = data_stack
                         .pop()
-                        .unwrap_or(item::Item::from_box(item::DrwBox::new(0.0, 0.0, 0.0)))
+                        .unwrap_or(item::Item::from_box(item::DrwBox::from_nums(0.0, 0.0, 0.0)))
                         .get_box();
-                    data_stack.push(item::Item::from_num(the_box.b));
-                    data_stack.push(item::Item::from_num(the_box.g));
-                    data_stack.push(item::Item::from_num(the_box.r));
+                    data_stack.push(the_box.b);
+                    data_stack.push(the_box.g);
+                    data_stack.push(the_box.r);
                 }
                 _ => unreachable!(), //should never happen. make this "a bug was found in the interpreter" error
             },
@@ -277,40 +274,70 @@ fn main() {
     }
 }
 fn dyadic_op(f: &dyn Fn(f64, f64) -> f64, default: f64, data_stack: &mut stack::Stack<item::Item>) {
-    let a = data_stack
-        .pop()
-        .unwrap_or(item::Item::from_num(default))
-        .get_number();
-    let b = data_stack
-        .pop()
-        .unwrap_or(item::Item::from_num(default))
-        .get_number();
-    data_stack.push(item::Item::from_num(f(a, b)));
+    let a = data_stack.pop().unwrap_or(item::Item::from_num(default));
+    let b = data_stack.pop().unwrap_or(item::Item::from_num(default));
+    data_stack.push(_apply_dyadic_op(f, a, b));
+}
+//there is probably some optimization that could be done here because you can quicken somthing once you know one arg is numeric
+fn _apply_dyadic_op(f: &dyn Fn(f64, f64) -> f64, a: item::Item, b: item::Item) -> item::Item {
+    if a.itemtype == item::ItemType::Number {
+        if b.itemtype == item::ItemType::Number {
+            //a and b are both numbers, so just normally apply
+            item::Item::from_num(f(a.get_number(), b.get_number()))
+        } else {
+            //a is a number, b is a box so apply to all elements of b using this function
+            item::Item::from_box(item::DrwBox::new(
+                _apply_dyadic_op(f, a.clone(), b.clone().get_box().r),
+                _apply_dyadic_op(f, a.clone(), b.clone().get_box().g),
+                _apply_dyadic_op(f, a.clone(), b.clone().get_box().b),
+            ))
+        }
+    } else {
+        if b.itemtype == item::ItemType::Number {
+            //a is a box and b is a number, so do the same thing as (num, box)
+            item::Item::from_box(item::DrwBox::new(
+                _apply_dyadic_op(f, a.clone().get_box().r, b.clone()),
+                _apply_dyadic_op(f, a.clone().get_box().g, b.clone()),
+                _apply_dyadic_op(f, a.clone().get_box().b, b.clone()),
+            ))
+        } else {
+            //both are boxes so ~~its scary~~ it applys each element to the one in the other arg
+            item::Item::from_box(item::DrwBox::new(
+                _apply_dyadic_op(f, a.clone().get_box().r, b.clone().get_box().r),
+                _apply_dyadic_op(f, a.clone().get_box().g, b.clone().get_box().g),
+                _apply_dyadic_op(f, a.clone().get_box().b, b.clone().get_box().b),
+            ))
+        }
+    }
 }
 fn monadic_op(f: &dyn Fn(f64) -> f64, default: f64, data_stack: &mut stack::Stack<item::Item>) {
-    let a = data_stack
-        .pop()
-        .unwrap_or(item::Item::from_num(default))
-        .get_number();
-    data_stack.push(item::Item::from_num(f(a)));
+    let a = data_stack.pop().unwrap_or(item::Item::from_num(default));
+    data_stack.push(_apply_monadic_op(f, a));
+}
+fn _apply_monadic_op(f: &dyn Fn(f64) -> f64, a: item::Item) -> item::Item {
+    if a.itemtype == item::ItemType::Number {
+        item::Item::from_num(f(a.get_number()))
+    } else {
+        item::Item::from_box(item::DrwBox::new(
+            _apply_monadic_op(f, a.clone().get_box().r),
+            _apply_monadic_op(f, a.clone().get_box().g),
+            _apply_monadic_op(f, a.clone().get_box().b),
+        ))
+    }
 }
 fn comp_op(f: &dyn Fn(f64, f64) -> bool, data_stack: &mut stack::Stack<item::Item>) {
     let a = data_stack.pop();
     let b = data_stack.pop();
-    //comparison operators return false by default
-    match a {
-        Some(a_num) => match b {
-            Some(b_num) => {
-                data_stack.push(item::Item::from_num(
-                    if f(a_num.get_number(), b_num.get_number()) {
-                        1.0
-                    } else {
-                        0.0
-                    },
-                ));
+    //comparison operators return false by default, which is why they are special cased
+    data_stack.push(match a {
+        Some(a_item) => match b {
+            Some(b_item) => {
+                //turn f into a regular function so it can be passed to _apply_dyadic_op
+                let f: &dyn Fn(f64, f64) -> f64 = &|a, b| if f(a, b) { 1.0 } else { 0.0 };
+                _apply_dyadic_op(f, a_item, b_item)
             }
-            None => data_stack.push(item::Item::from_num(0.0)),
+            None => item::Item::from_num(0.0),
         },
-        None => data_stack.push(item::Item::from_num(0.0)),
-    }
+        None => item::Item::from_num(0.0),
+    });
 }

@@ -30,14 +30,14 @@
 - functions
 #### Done
 - boxes
-#### Not done
+#### Done
 - error handling
 > This means "any syntactcally valid code causes ~~no~~ *minimal* runtime errors because runtime errors *mostly* don't exist" a la [Decker](https://github.com/JohnEarnest/Decker)
 > 
 > Therefore we have:
 > - [x] An id value for each builtin if the stack is empty or at the bottom from dipping(0 for +/-,1 for *,[0 0 0] for B)
-> - [ ] Lisp-Style lists from nested boxes
-> - [ ] Operation pervasiveness for boxes
+> - [x] Lisp-Style lists from nested boxes
+> - [x] Operation pervasiveness for boxes
 >
 > There are ~~2~~ *1* possible types of runtime errors:
 > ~~- "cannot {operator} {arg1} and {arg2}" ~~
@@ -68,6 +68,10 @@
 #### Not done
 - imports
 > Some kind of meta-syntax/interpreter arguments/semantic comments. drw doesnt (and wont [I guess you could store a string in the recursive boxes, but theres no printing faclity \<yet\>]) have strings so must be not an actual command
+#### Not done
+- isbox
+> no errors and easily cooreced types(if you can even call them that) means it can be hard to figure out whats a box so this
+
 
 # This is the point at which Drw will be considered 0.1.0 under [Semantic Versioning](https://semver.org)
 

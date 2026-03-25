@@ -8,24 +8,31 @@ pub enum ItemType {
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct DrwBox {
-    pub r: f64,
-    pub g: f64,
-    pub b: f64,
+    pub r: Item,
+    pub g: Item,
+    pub b: Item,
 }
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct Item {
     pub itemtype: ItemType,
     pub number: Option<f64>,
-    pub boxed: Option<DrwBox>,
+    pub boxed: Option<Box<DrwBox>>,
 }
 
 impl DrwBox {
-    pub fn new(newr: f64, newg: f64, newb: f64) -> DrwBox {
+    pub fn new(newr: Item, newg: Item, newb: Item) -> DrwBox {
         DrwBox {
             r: newr,
             g: newg,
             b: newb,
+        }
+    }
+    pub fn from_nums(newr: f64, newg: f64, newb: f64) -> DrwBox {
+        DrwBox {
+            r: Item::from_num(newr),
+            g: Item::from_num(newg),
+            b: Item::from_num(newb),
         }
     }
 }
@@ -34,10 +41,10 @@ impl fmt::Display for DrwBox {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "〚{},{},{}〛",
-            self.clone().r,
-            self.clone().g,
-            self.clone().b
+            "〚{} {} {}〛",
+            self.clone().r.to_string(),
+            self.clone().g.to_string(),
+            self.clone().b.to_string(),
         )
     }
 }
@@ -54,28 +61,33 @@ impl Item {
         Item {
             itemtype: ItemType::Box,
             number: None,
-            boxed: Some(item),
+            boxed: Some(Box::new(item)),
         }
     }
     pub fn get_number(self) -> f64 {
         if self.itemtype == ItemType::Number {
-            return self.number.unwrap();
+            self.number.unwrap()
         } else {
-            return self.boxed.unwrap().r;
+            self.boxed.unwrap().r.get_number()
         }
     }
     pub fn get_box(self) -> DrwBox {
         if self.itemtype == ItemType::Box {
-            return self.boxed.unwrap();
+            *(self.boxed.unwrap())
         } else {
-            return DrwBox::new(self.number.unwrap(), 0.0, 0.0);
+            DrwBox::from_nums(self.number.unwrap(), 0.0, 0.0)
         }
     }
     pub fn is_truthy(self) -> bool {
         if self.itemtype == ItemType::Number {
-            return self.number.unwrap() != 0.0;
+            self.number.unwrap() != 0.0
         } else {
-            return self.boxed.unwrap() != DrwBox::new(0.0, 0.0, 0.0);
+            let item = *(self.boxed.unwrap());
+            if item != DrwBox::from_nums(0.0, 0.0, 0.0) {
+                item.r.is_truthy() || item.g.is_truthy() || item.b.is_truthy()
+            } else {
+                false
+            }
         }
     }
 }
@@ -83,9 +95,9 @@ impl Item {
 impl fmt::Display for Item {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.itemtype == ItemType::Number {
-            return write!(f, "{}", self.clone().get_number().to_string());
+            write!(f, "{}", self.clone().get_number().to_string())
         } else {
-            return write!(f, "{}", self.clone().get_box().to_string());
+            write!(f, "{}", self.clone().get_box().to_string())
         }
     }
 }

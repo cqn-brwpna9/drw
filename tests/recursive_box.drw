@@ -1,0 +1,6 @@
+B1+?#make a box+preform a mapping operation on it
+.1+?#preform another
+B1+?#put those boxes in boxes(hehehe)
+1:-?#preform a recursive operation on the boxes in boxes
+.U(:)B?#make a differently shaped box
++#combine them together
