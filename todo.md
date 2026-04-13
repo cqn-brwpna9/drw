@@ -68,7 +68,7 @@
 #### Not done
 - imports
 > Some kind of meta-syntax/interpreter arguments/semantic comments. drw doesnt (and wont [I guess you could store a string in the recursive boxes, but theres no printing faclity \<yet\>]) have strings so must be not an actual command
-#### Not done
+#### Done
 - isbox
 > no errors and easily cooreced types(if you can even call them that) means it can be hard to figure out whats a box so this
 

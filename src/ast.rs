@@ -51,6 +51,7 @@ pub enum Commands {
     UndipCommand,
     BoxCommand,
     UnboxCommand,
+    IsBoxCommand,
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -68,13 +69,13 @@ pub enum ASTnodeType {
     Function,
 }
 
-const ALLOWED_CHARS: [char; 47] = [
+const ALLOWED_CHARS: [char; 48] = [
     '^', '~', '.', ':', 'p', '+', '-', '*', '/', '%', ' ', '0', '1', '2', '3', '4', '5', '6', '7',
     '8', '9', '[', ']', '{', '}', '(', ')', 'o', 'r', 'c', 'd', 'u', 's', '?', 'P', 'l', 'e', 'q',
-    'S', 'C', 'f', 'R', '>', '<', '=', 'B', 'U',
+    'S', 'C', 'f', 'R', '>', '<', '=', 'B', 'U', 'I',
 ];
 
-const CONVERSION_MAP: [(char, Commands); 32] = [
+const CONVERSION_MAP: [(char, Commands); 33] = [
     ('^', Commands::ForwardCommand),
     ('~', Commands::TurnCommand),
     ('.', Commands::DuplicateCommand),
@@ -107,6 +108,7 @@ const CONVERSION_MAP: [(char, Commands); 32] = [
     (')', Commands::UndipCommand),
     ('B', Commands::BoxCommand),
     ('U', Commands::UnboxCommand),
+    ('I', Commands::IsBoxCommand),
 ]; //just use HashMap::from when actually needed
 
 const BRACK_CONV_MAP: [(char, ControlStructures); 2] = [
@@ -114,9 +116,9 @@ const BRACK_CONV_MAP: [(char, ControlStructures); 2] = [
     ('{', ControlStructures::WhileLoop),
 ]; //ditto
 
-const ALLOWED_COMMANDS: [char; 32] = [
+const ALLOWED_COMMANDS: [char; 33] = [
     '^', '~', '.', ':', 'p', '+', '-', '*', '/', '%', 'o', 'r', 'c', 'd', 'u', 's', '?', 'P', 'l',
-    'e', 'q', 'S', 'C', 'f', 'R', '>', '<', '=', '(', ')', 'B', 'U',
+    'e', 'q', 'S', 'C', 'f', 'R', '>', '<', '=', '(', ')', 'B', 'U', 'I'
 ];
 
 const ALLOWED_BRACKETS: [char; 4] = ['[', ']', '{', '}'];

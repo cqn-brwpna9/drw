@@ -191,6 +191,16 @@ fn evallist(
                     data_stack.push(the_box.g);
                     data_stack.push(the_box.r);
                 }
+		ast::Commands::IsBoxCommand => {
+		    let item = data_stack.pop();
+		    data_stack.push(item::Item::from_num(match item {
+			Some(i) => {
+			    if i.itemtype == item::ItemType::Box {1.0}
+			    else {0.0}
+			}
+			None => 0.0
+		    }))
+		}
                 _ => unreachable!(), //should never happen. make this "a bug was found in the interpreter" error
             },
             ast::ASTnodeType::ControlStructure => match node.structure.unwrap() {
@@ -248,10 +258,6 @@ fn evallist(
     }
 }
 
-fn print(string: String) {
-    println!("{string}");
-}
-
 fn main() {
     let mut data_stack: stack::Stack<item::Item> = stack::Stack::new();
     let mut dip_stack: stack::Stack<item::Item> = stack::Stack::new();
@@ -259,13 +265,14 @@ fn main() {
 
     let asts_to_pass = read();
     if asts_to_pass.0.is_ok() {
-        print(eval(
+        let output=eval(
             asts_to_pass.0.unwrap(),
             asts_to_pass.1,
             &mut data_stack,
             &mut dip_stack,
             &mut drawing_turtle,
-        ));
+        );
+	println!("{}", output);
     } else {
         println!("{}", asts_to_pass.0.unwrap_err());
     }
