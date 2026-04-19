@@ -52,6 +52,8 @@ pub enum Commands {
     BoxCommand,
     UnboxCommand,
     IsBoxCommand,
+    RotCommand,
+    UnrotCommand,
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -69,13 +71,13 @@ pub enum ASTnodeType {
     Function,
 }
 
-const ALLOWED_CHARS: [char; 48] = [
-    '^', '~', '.', ':', 'p', '+', '-', '*', '/', '%', ' ', '0', '1', '2', '3', '4', '5', '6', '7',
+const ALLOWED_CHARS: [char; 50] = [
+    '^', '~', '.', ':', '!', '+', '-', '*', '/', '%', ' ', '0', '1', '2', '3', '4', '5', '6', '7',
     '8', '9', '[', ']', '{', '}', '(', ')', 'o', 'r', 'c', 'd', 'u', 's', '?', 'P', 'l', 'e', 'q',
-    'S', 'C', 'f', 'R', '>', '<', '=', 'B', 'U', 'I',
+    'S', 'C', 'f', 'R', '>', '<', '=', 'B', 'U', 'I', '@', '&',
 ];
 
-const CONVERSION_MAP: [(char, Commands); 33] = [
+const CONVERSION_MAP: [(char, Commands); 35] = [
     ('^', Commands::ForwardCommand),
     ('~', Commands::TurnCommand),
     ('.', Commands::DuplicateCommand),
@@ -109,6 +111,8 @@ const CONVERSION_MAP: [(char, Commands); 33] = [
     ('B', Commands::BoxCommand),
     ('U', Commands::UnboxCommand),
     ('I', Commands::IsBoxCommand),
+    ('@', Commands::RotCommand),
+    ('&', Commands::UnrotCommand),
 ]; //just use HashMap::from when actually needed
 
 const BRACK_CONV_MAP: [(char, ControlStructures); 2] = [
@@ -116,12 +120,13 @@ const BRACK_CONV_MAP: [(char, ControlStructures); 2] = [
     ('{', ControlStructures::WhileLoop),
 ]; //ditto
 
-const ALLOWED_COMMANDS: [char; 33] = [
+const ALLOWED_COMMANDS: [char; 35] = [
     '^', '~', '.', ':', 'p', '+', '-', '*', '/', '%', 'o', 'r', 'c', 'd', 'u', 's', '?', 'P', 'l',
-    'e', 'q', 'S', 'C', 'f', 'R', '>', '<', '=', '(', ')', 'B', 'U', 'I'
+    'e', 'q', 'S', 'C', 'f', 'R', '>', '<', '=', '(', ')', 'B', 'U', 'I', '@', '&',
 ];
 
 const ALLOWED_BRACKETS: [char; 4] = ['[', ']', '{', '}'];
+
 const NUMBER_CHARS: [char; 10] = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
 fn verify(code_in: String, functions: Vec<char>) -> Result<Vec<char>, String> {
@@ -321,7 +326,7 @@ fn verify_test() {
     assert_eq!(verify("[]".to_string(), Vec::new()).is_ok(), true);
     println!("testing {{}}{{{{}}[]}}");
     assert_eq!(verify("{}{{}[]}".to_string(), Vec::new()).is_ok(), true);
-    println!("testing [{{[]}}]"); //the extra {} are for format! 
+    println!("testing [{{[]}}]"); //the extra {} are for format!
     assert_eq!(verify("[{[]}]".to_string(), Vec::new()).is_ok(), true);
 }
 #[test]

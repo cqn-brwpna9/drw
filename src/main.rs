@@ -81,7 +81,7 @@ fn evallist(
     dip_stack: &mut stack::Stack<item::Item>,
     drawing_turtle: &mut turtle::Turtle,
 ) {
-    let mut _throwaway: item::Item;
+    let mut _throwaway: Option<item::Item>;
     for node in syntax_tree {
         match node.nodetype {
             ast::ASTnodeType::Number => data_stack.push(item::Item::from_num(node.number.unwrap())),
@@ -103,7 +103,28 @@ fn evallist(
                 ),
                 ast::Commands::DuplicateCommand => data_stack.dup(),
                 ast::Commands::SwapCommand => data_stack.swap(),
-                ast::Commands::PopCommand => _throwaway = data_stack.pop().unwrap(),
+                ast::Commands::PopCommand => _throwaway = data_stack.pop(),
+                ast::Commands::RotCommand => {
+                    //a b c -> c a b
+                    let a = data_stack.pop().unwrap_or(item::Item::from_num(0.0));
+                    let b = data_stack.pop().unwrap_or(item::Item::from_num(0.0));
+                    let c = data_stack.pop().unwrap_or(item::Item::from_num(0.0));
+
+                    data_stack.push(b);
+                    data_stack.push(a);
+                    data_stack.push(c);
+                }
+                ast::Commands::UnrotCommand => {
+                    //a b c -> b c a
+                    let a = data_stack.pop().unwrap_or(item::Item::from_num(0.0));
+                    let b = data_stack.pop().unwrap_or(item::Item::from_num(0.0));
+                    let c = data_stack.pop().unwrap_or(item::Item::from_num(0.0));
+
+                    data_stack.push(a);
+                    data_stack.push(c);
+                    data_stack.push(b);
+                }
+
                 ast::Commands::AddCommand => dyadic_op(&|a, b| a + b, 0.0, data_stack),
                 ast::Commands::SubtractCommand => dyadic_op(&|a, b| a - b, 0.0, data_stack),
                 ast::Commands::MultiplyCommand => dyadic_op(&|a, b| a * b, 1.0, data_stack),
@@ -191,16 +212,19 @@ fn evallist(
                     data_stack.push(the_box.g);
                     data_stack.push(the_box.r);
                 }
-		ast::Commands::IsBoxCommand => {
-		    let item = data_stack.pop();
-		    data_stack.push(item::Item::from_num(match item {
-			Some(i) => {
-			    if i.itemtype == item::ItemType::Box {1.0}
-			    else {0.0}
-			}
-			None => 0.0
-		    }))
-		}
+                ast::Commands::IsBoxCommand => {
+                    let item = data_stack.pop();
+                    data_stack.push(item::Item::from_num(match item {
+                        Some(i) => {
+                            if i.itemtype == item::ItemType::Box {
+                                1.0
+                            } else {
+                                0.0
+                            }
+                        }
+                        None => 0.0,
+                    }))
+                }
                 _ => unreachable!(), //should never happen. make this "a bug was found in the interpreter" error
             },
             ast::ASTnodeType::ControlStructure => match node.structure.unwrap() {
@@ -265,14 +289,14 @@ fn main() {
 
     let asts_to_pass = read();
     if asts_to_pass.0.is_ok() {
-        let output=eval(
+        let output = eval(
             asts_to_pass.0.unwrap(),
             asts_to_pass.1,
             &mut data_stack,
             &mut dip_stack,
             &mut drawing_turtle,
         );
-	println!("{}", output);
+        println!("{}", output);
     } else {
         println!("{}", asts_to_pass.0.unwrap_err());
     }

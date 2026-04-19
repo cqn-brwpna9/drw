@@ -30,7 +30,8 @@ A feature will have :( by it if it is unimplemented
 |Duplicate|`.`|Duplicates the top stack value.|
 |Swap|`:`|Swaps the two top stack values.|
 |Dip and undip|`(` and `)`| `(` temporarily pops the top stack value to an inaccessible stack that can be thought of as "above" the main stack. `)` pushes one value from the upper stack.|
-|Pop|`p`|Discards the top stack value.|
+|Pop|`!`|Discards the top stack value.|
+|Rot and unrot|`@` and `&`| `@` puts the third stack value on top of the stack. `&` puts the first stack value in the third value on the stack.|
 |Debug print|`?`|Print out the whole stack without popping it.|
 
 ### Box commands
