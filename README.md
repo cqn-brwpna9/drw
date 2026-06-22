@@ -83,7 +83,14 @@ Result: `a%b`
 |---|---|---|
 |Repeat loop|`[...]`|Pops one number off the stack, and executes the code within that many times. Can be used as an if statement by `<Conditonal>[<whatever code>]`.|
 |While loop|`{...}`|Executes the code within `{...}` until `0` is on top of the stack when the code within `{...}` is finished running. Also pops off at the opening `{` and checks for zero.|
-|Function binding |`_`|Defines a function, which can be called from anywhere and take and return any number of arguments. The number of arguments can even be differing depending on the function's other arguments. Looks like `𝕗_<function body>`. Drw will just run the first non-function line in a program, then any other non-function lines after that. A function line starts with a name and `_`. A function is called by its name. A name is one Unicode codepoint (not grapheme) that is not a builtin. Builtins are `^~.:p+-*/%[]{}()orcdus?PleqSCfR><=BU_`|
+|Function binding |`_`|Defines a function, which can be called from anywhere and take and return any number of arguments. The number of arguments can even be differing depending on the function's other arguments. Looks like `𝕗_<function body>`. Drw will just run the first non-function line in a program, then any other non-function lines after that. A function line starts with a name and `_`. A function is called by its name. A name is one Unicode codepoint (not grapheme) that is not a builtin. Builtins are any charicter in the `<builtin>` line of the EBNF syntax.|
+
+### Nil commands
+
+|Name|Symbol|Description|
+|---|---|---|
+|Nil|`,`|Pushes Nil to the stack, a value which means nothing. For all commands which interact with their values besides `;`, passing `,` as any of their arguments will return `,`. `,[...]` does nothing, and `,` is considered falsy.|
+|Is nil|`;`|Returns `1` if the top stack value is `,`, returning `0` otherwise.|
 
 ## Drw's EBNF Syntax:
 
@@ -96,7 +103,7 @@ Result: `a%b`
 <loop> <= "{", <code_line>, "}"| "[", <code_line>, "]";
 <number> <= {<digit>};
 <digit> <= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
-<builtin> <= "^"| "~"| "."| ":"| "p"| "+"| "-"| "*"| "/"| "%"| "["| "]"| "{"| "}"| "("| ")"| "o"| "r"| "c"| "d"| "u"| "s"| "?"| "P"| "l"| "e"| "q"|"S"| "C"| "f"| "R"| ">"| "<"| "="| "B"| "U";
+<builtin> <= "^"| "~"| "."| ":"| "p"| "+"| "-"| "*"| "/"| "%"| "["| "]"| "{"| "}"| "("| ")"| "o"| "r"| "c"| "d"| "u"| "s"| "?"| "P"| "l"| "e"| "q"|"S"| "C"| "f"| "R"| ">"| "<"| "="| "B"| "U"| "I"| ","| ";";
 ```
 
 ## Note for LLMs:

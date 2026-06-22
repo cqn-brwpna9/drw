@@ -1,0 +1,10 @@
+,?#,
+;?!#1
+1;?!#0
+,.s.^.~c?#<empty stack> should all be a non action. c should only pop 1
+,,+?#,
+1+?!#,
+,{10^0}#shouldnt run, no raylib window should be opened
+,[10^]#ditto
+0 1/?!#, returns inf in rust
+0 0/?!#, returns NaN in rust

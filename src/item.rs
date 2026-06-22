@@ -1,9 +1,11 @@
+//TODO use an enum instead of a tagged union thingy
 use std::fmt;
 
 #[derive(PartialEq, Clone, Debug)]
 pub enum ItemType {
     Number,
     Box,
+    Nil,
 }
 
 #[derive(PartialEq, Clone, Debug)]
@@ -64,29 +66,49 @@ impl Item {
             boxed: Some(Box::new(item)),
         }
     }
+    pub fn nil() -> Item {
+        Item {
+            itemtype: ItemType::Nil,
+            number: None,
+            boxed: None,
+        }
+    }
     pub fn get_number(self) -> f64 {
-        if self.itemtype == ItemType::Number {
-            self.number.unwrap()
-        } else {
-            self.boxed.unwrap().r.get_number()
+        match self.itemtype {
+            ItemType::Number => self.number.unwrap(),
+            ItemType::Box => self.boxed.unwrap().r.get_number(),
+            ItemType::Nil => {
+                panic!("Tried to call get_number on a nil value. This is a bug in the interpreter")
+            }
+        }
+    }
+    pub fn get_number_or(self, or: f64) -> f64 {
+        match self.itemtype {
+            ItemType::Number => self.number.unwrap(),
+            ItemType::Box => self.boxed.unwrap().r.get_number(),
+            ItemType::Nil => or,
         }
     }
     pub fn get_box(self) -> DrwBox {
-        if self.itemtype == ItemType::Box {
-            *(self.boxed.unwrap())
-        } else {
-            DrwBox::from_nums(self.number.unwrap(), 0.0, 0.0)
+        match self.itemtype {
+            ItemType::Box => *(self.boxed.unwrap()),
+            ItemType::Number => DrwBox::from_nums(self.number.unwrap(), 0.0, 0.0),
+            ItemType::Nil => {
+                panic!("Tried to call get_box on a nil value. This is a bug in the interpreter")
+            }
         }
     }
     pub fn is_truthy(self) -> bool {
-        if self.itemtype == ItemType::Number {
-            self.number.unwrap() != 0.0
-        } else {
-            let item = *(self.boxed.unwrap());
-            if item != DrwBox::from_nums(0.0, 0.0, 0.0) {
-                item.r.is_truthy() || item.g.is_truthy() || item.b.is_truthy()
-            } else {
-                false
+        match self.itemtype {
+            ItemType::Number => self.number.unwrap() != 0.0,
+            ItemType::Nil => false,
+            ItemType::Box => {
+                let item = *(self.boxed.unwrap());
+                if item != DrwBox::from_nums(0.0, 0.0, 0.0) {
+                    item.r.is_truthy() || item.g.is_truthy() || item.b.is_truthy()
+                } else {
+                    false
+                }
             }
         }
     }
@@ -94,10 +116,10 @@ impl Item {
 
 impl fmt::Display for Item {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.itemtype == ItemType::Number {
-            write!(f, "{}", self.clone().get_number().to_string())
-        } else {
-            write!(f, "{}", self.clone().get_box().to_string())
+        match self.itemtype {
+            ItemType::Number => write!(f, "{}", self.clone().get_number().to_string()),
+            ItemType::Nil => write!(f, ","),
+            ItemType::Box => write!(f, "{}", self.clone().get_box().to_string()),
         }
     }
 }

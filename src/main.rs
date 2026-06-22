@@ -81,29 +81,31 @@ fn evallist(
     dip_stack: &mut stack::Stack<item::Item>,
     drawing_turtle: &mut turtle::Turtle,
 ) {
-    let mut _throwaway: Option<item::Item>;
     for node in syntax_tree {
         match node.nodetype {
             ast::ASTnodeType::Number => data_stack.push(item::Item::from_num(node.number.unwrap())),
             ast::ASTnodeType::Command => match node.command.unwrap() {
                 ast::Commands::ForwardCommand => {
-                    drawing_turtle.forward(
-                        data_stack
-                            .pop()
-                            .unwrap_or(item::Item::from_num(0.0))
-                            .get_number() as f32,
-                    );
-                    drawing_turtle.push();
+                    if data_stack.peek().unwrap_or(&item::Item::nil()).itemtype
+                        == item::ItemType::Nil
+                    {
+                        let _throwaway = data_stack.pop();
+                    } else {
+                        drawing_turtle.forward(data_stack.pop().unwrap().get_number_or(0.0) as f32);
+                        drawing_turtle.push();
+                    }
                 }
                 ast::Commands::TurnCommand => drawing_turtle.turn(
                     data_stack
                         .pop()
                         .unwrap_or(item::Item::from_num(0.0))
-                        .get_number() as f32,
+                        .get_number_or(0.0) as f32,
                 ),
                 ast::Commands::DuplicateCommand => data_stack.dup(),
                 ast::Commands::SwapCommand => data_stack.swap(),
-                ast::Commands::PopCommand => _throwaway = data_stack.pop(),
+                ast::Commands::PopCommand => {
+                    let _throwaway = data_stack.pop();
+                }
                 ast::Commands::RotCommand => {
                     //a b c -> c a b
                     let a = data_stack.pop().unwrap_or(item::Item::from_num(0.0));
@@ -128,7 +130,7 @@ fn evallist(
                 ast::Commands::AddCommand => dyadic_op(&|a, b| a + b, 0.0, data_stack),
                 ast::Commands::SubtractCommand => dyadic_op(&|a, b| a - b, 0.0, data_stack),
                 ast::Commands::MultiplyCommand => dyadic_op(&|a, b| a * b, 1.0, data_stack),
-                ast::Commands::DivideCommand => dyadic_op(&|a, b| a / b, 1.0, data_stack),
+                ast::Commands::DivideCommand => dyadic_op(&|a, b| a / b, 1.0, data_stack), //todo make return nil on zero division
                 ast::Commands::ModuloCommand => dyadic_op(&|a, b| a % b, 1.0, data_stack),
                 ast::Commands::DegreeCommand => {
                     if drawing_turtle.using_degrees() {
@@ -145,7 +147,12 @@ fn evallist(
                     }
                 }
                 ast::Commands::ColorCommand => {
-                    if data_stack.peek().unwrap().itemtype == item::ItemType::Number {
+                    if data_stack
+                        .peek()
+                        .unwrap_or(&item::Item::from_num(0.0))
+                        .itemtype
+                        == item::ItemType::Number
+                    {
                         let r = data_stack
                             .pop()
                             .unwrap_or(item::Item::from_num(255.0))
@@ -159,6 +166,9 @@ fn evallist(
                             .unwrap_or(item::Item::from_num(255.0))
                             .get_number();
                         drawing_turtle.set_color(r as u8, g as u8, b as u8);
+                    } else if data_stack.peek().unwrap().itemtype == item::ItemType::Nil {
+                        //unwrap_or is unneeded because empty stack was checked for in isnum check
+                        let _throwaway = data_stack.pop();
                     } else {
                         let the_box = data_stack
                             .pop()
@@ -175,12 +185,15 @@ fn evallist(
                 }
                 ast::Commands::PenDownCommand => drawing_turtle.pen_down(),
                 ast::Commands::PenUpCommand => drawing_turtle.pen_up(),
-                ast::Commands::SizeCommand => drawing_turtle.set_pen_size(
-                    data_stack
-                        .pop()
-                        .unwrap_or(item::Item::from_num(1.0))
-                        .get_number() as f32,
-                ),
+                ast::Commands::SizeCommand => {
+                    if data_stack.peek().unwrap_or(&item::Item::nil()).itemtype
+                        == item::ItemType::Nil
+                    {
+                        let _throwaway = data_stack.pop();
+                    } else {
+                        drawing_turtle.set_pen_size(data_stack.pop().unwrap().get_number() as f32);
+                    }
+                }
                 ast::Commands::DebugCommand => println!("{}", data_stack.to_string()),
                 ast::Commands::PowerCommand => dyadic_op(&|a, b| a.powf(b), 1.0, data_stack),
                 ast::Commands::LogCommand => dyadic_op(&|a, b| a.log(b), EULERS_NUMBER, data_stack),
@@ -225,6 +238,11 @@ fn evallist(
                         None => 0.0,
                     }))
                 }
+                ast::Commands::NilCommand => data_stack.push(item::Item::nil()),
+                ast::Commands::IsNilCommand => {
+                    let a = data_stack.pop().unwrap_or(item::Item::from_num(0.0));
+                    data_stack.push(apply_is_nil(a));
+                }
                 _ => unreachable!(), //should never happen. make this "a bug was found in the interpreter" error
             },
             ast::ASTnodeType::ControlStructure => match node.structure.unwrap() {
@@ -233,13 +251,13 @@ fn evallist(
                     if n.itemtype == item::ItemType::Box {
                         panic!("Cannot iterate over boxes!\n Got: {n}")
                     }
-                    let num: f64 = n.get_number();
+                    let num: f64 = n.get_number_or(0.0);
                     if num != num.floor() {
                         panic!("Cannot iterate a non-whole number of times!\n Got: {num}")
                     }
                     if num < 0.0 {
                         panic!(
-                            "Cannot iterate a negative number of times! (this isnt Uiua)\n Got: {num}"
+                            "Cannot iterate a negative number of times! (drw isn't Uiua)\n Got: {num}"
                         )
                     }
                     for _ in 0..num as u64 {
@@ -311,33 +329,43 @@ fn dyadic_op(f: &dyn Fn(f64, f64) -> f64, default: f64, data_stack: &mut stack::
 }
 //there is probably some optimization that could be done here because you can quicken somthing once you know one arg is numeric
 fn _apply_dyadic_op(f: &dyn Fn(f64, f64) -> f64, a: item::Item, b: item::Item) -> item::Item {
-    if a.itemtype == item::ItemType::Number {
-        if b.itemtype == item::ItemType::Number {
-            //a and b are both numbers, so just normally apply
-            item::Item::from_num(f(a.get_number(), b.get_number()))
-        } else {
-            //a is a number, b is a box so apply to all elements of b using this function
-            item::Item::from_box(item::DrwBox::new(
-                _apply_dyadic_op(f, a.clone(), b.clone().get_box().r),
-                _apply_dyadic_op(f, a.clone(), b.clone().get_box().g),
-                _apply_dyadic_op(f, a.clone(), b.clone().get_box().b),
-            ))
-        }
+    if a.itemtype == item::ItemType::Nil || b.itemtype == item::ItemType::Nil {
+        item::Item::nil()
     } else {
-        if b.itemtype == item::ItemType::Number {
-            //a is a box and b is a number, so do the same thing as (num, box)
-            item::Item::from_box(item::DrwBox::new(
-                _apply_dyadic_op(f, a.clone().get_box().r, b.clone()),
-                _apply_dyadic_op(f, a.clone().get_box().g, b.clone()),
-                _apply_dyadic_op(f, a.clone().get_box().b, b.clone()),
-            ))
+        if a.itemtype == item::ItemType::Number {
+            if b.itemtype == item::ItemType::Number {
+                //a and b are both numbers, so just normally apply
+                let result = f(a.get_number(), b.get_number());
+                //protect the user from NaNs and the like
+                if result.is_finite() {
+                    item::Item::from_num(result)
+                } else {
+                    item::Item::nil()
+                }
+            } else {
+                //a is a number, b is a box so apply to all elements of b using this function
+                item::Item::from_box(item::DrwBox::new(
+                    _apply_dyadic_op(f, a.clone(), b.clone().get_box().r),
+                    _apply_dyadic_op(f, a.clone(), b.clone().get_box().g),
+                    _apply_dyadic_op(f, a.clone(), b.clone().get_box().b),
+                ))
+            }
         } else {
-            //both are boxes so ~~its scary~~ it applys each element to the one in the other arg
-            item::Item::from_box(item::DrwBox::new(
-                _apply_dyadic_op(f, a.clone().get_box().r, b.clone().get_box().r),
-                _apply_dyadic_op(f, a.clone().get_box().g, b.clone().get_box().g),
-                _apply_dyadic_op(f, a.clone().get_box().b, b.clone().get_box().b),
-            ))
+            if b.itemtype == item::ItemType::Number {
+                //a is a box and b is a number, so do the same thing as (num, box)
+                item::Item::from_box(item::DrwBox::new(
+                    _apply_dyadic_op(f, a.clone().get_box().r, b.clone()),
+                    _apply_dyadic_op(f, a.clone().get_box().g, b.clone()),
+                    _apply_dyadic_op(f, a.clone().get_box().b, b.clone()),
+                ))
+            } else {
+                //both are boxes so ~~its scary~~ it applys each element to the one in the other arg
+                item::Item::from_box(item::DrwBox::new(
+                    _apply_dyadic_op(f, a.clone().get_box().r, b.clone().get_box().r),
+                    _apply_dyadic_op(f, a.clone().get_box().g, b.clone().get_box().g),
+                    _apply_dyadic_op(f, a.clone().get_box().b, b.clone().get_box().b),
+                ))
+            }
         }
     }
 }
@@ -346,14 +374,21 @@ fn monadic_op(f: &dyn Fn(f64) -> f64, default: f64, data_stack: &mut stack::Stac
     data_stack.push(_apply_monadic_op(f, a));
 }
 fn _apply_monadic_op(f: &dyn Fn(f64) -> f64, a: item::Item) -> item::Item {
-    if a.itemtype == item::ItemType::Number {
-        item::Item::from_num(f(a.get_number()))
-    } else {
-        item::Item::from_box(item::DrwBox::new(
+    match a.itemtype {
+        item::ItemType::Number => {
+            let result = f(a.get_number());
+            if result.is_finite() {
+                item::Item::from_num(result)
+            } else {
+                item::Item::nil()
+            }
+        }
+        item::ItemType::Nil => item::Item::nil(),
+        item::ItemType::Box => item::Item::from_box(item::DrwBox::new(
             _apply_monadic_op(f, a.clone().get_box().r),
             _apply_monadic_op(f, a.clone().get_box().g),
             _apply_monadic_op(f, a.clone().get_box().b),
-        ))
+        )),
     }
 }
 fn comp_op(f: &dyn Fn(f64, f64) -> bool, data_stack: &mut stack::Stack<item::Item>) {
@@ -371,4 +406,18 @@ fn comp_op(f: &dyn Fn(f64, f64) -> bool, data_stack: &mut stack::Stack<item::Ite
         },
         None => item::Item::from_num(0.0),
     });
+}
+
+//like _apply_monadic_op, but only is nil and has no nil guards
+
+fn apply_is_nil(a: item::Item) -> item::Item {
+    match a.itemtype {
+        item::ItemType::Nil => item::Item::from_num(1.0),
+        item::ItemType::Number => item::Item::from_num(0.0),
+        item::ItemType::Box => item::Item::from_box(item::DrwBox::new(
+            apply_is_nil(a.clone().get_box().r),
+            apply_is_nil(a.clone().get_box().g),
+            apply_is_nil(a.clone().get_box().b),
+        )),
+    }
 }
