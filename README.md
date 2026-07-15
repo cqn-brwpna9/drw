@@ -11,6 +11,9 @@ A feature will have :( by it if it is unimplemented
 ## Commands   
 
 ### Drawing commands
+#### Note: most commands which can only take one number do it via recursivley taking the red channel from boxes `[a b c]^` moves forward a steps and `[[[a b c] d ,] , e]^` moves forward a steps.
+
+-# the above examples are not valid because box literals do not exist.
 
 |Name|Symbol|Description|
 |---|---|---|
@@ -38,7 +41,7 @@ A feature will have :( by it if it is unimplemented
 
 |Name|Symbol|Description|
 |---|---|---|
-|Box|`B`|Takes three numbers, although it will soon also be able to take boxes as well, off the stack and combines them into a "box" which can be manipulated just like any value on the stack. Boxes do not support any other operations except coloring currently, although this will change later, which can either take three integers in [0, 256) or one box with all contained values in [0, 256).|
+|Box|`B`|Takes three values (including boxes) off the stack and combines them into a "box" which can be manipulated just like any value on the stack.|
 |Unbox|`U`|Puts the three values in a box back on the stack.|
 |Is box|`I`|Pushes 1 if the value on top of the stack is a box, 0 otherwise.|
  
@@ -57,6 +60,9 @@ Without boxes duplicating a color would be not easy. With boxes it is `B.` and `
 Code: `%`
 
 Result: `a%b`
+#### Note: All math commands are pervasive over boxes, meaning `[a b c] d+`=>`[a+d b+d c+d]`, `[a b c] [d e f]+`=>`[a+d b+e c+f]` and `[a b [c d e]] [[f g [h i j]] k l]+`=>`[[f+a g+a [h+a i+a j+a]] k+b [l+c l+d l+e]]`
+
+-# the above examples are not valid because box literals do not exist.
 
 |Name|Symbol|Description|
 |---|---|---|
@@ -90,7 +96,16 @@ Result: `a%b`
 |Name|Symbol|Description|
 |---|---|---|
 |Nil|`,`|Pushes Nil to the stack, a value which means nothing. For all commands which interact with their values besides `;`, passing `,` as any of their arguments will return `,`. `,[...]` does nothing, and `,` is considered falsy.|
-|Is nil|`;`|Returns `1` if the top stack value is `,`, returning `0` otherwise.|
+|Is nil|`;`|Returns `1` if the top stack value is `,`, returning `0` otherwise, pervading over boxes.|
+
+## Importing
+To import a module, use the `-m` switch at the command line. modules are `.drwm` files, which can only contain function definitions.  
+Example:
+```shell
+cargo run -- tests/list_test.drw -m lib/list.drw # if you are running using cargo
+drw tests/list_test.drw -m lib/list.drw # if you have drw as an executable in your PATH
+```
+Drw has a standard library, contained in the `lib` directory. Currently there's only a list library.  
 
 ## Drw's EBNF Syntax:
 

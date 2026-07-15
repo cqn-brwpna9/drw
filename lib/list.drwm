@@ -1,0 +1,81 @@
+# list structure:
+# [head tail ,]
+# Empty list is ,
+# Most glyphs unabashedly stolen from uiua
+
+# Cons
+# head list -> list
+⊂_,&B
+
+# New list
+# value -> list
+⊏_,,@B
+
+# Car
+# list -> head
+⊢_U&!!
+
+# Cdr
+# list -> tail
+⊣_U!:!
+
+# Unjoin (equivalent to `.⊢(⊣)`)
+# list -> head tail
+⊃_U@!
+
+# Isempty. returns true on , and nothing else
+# list -> empty?
+⊓_.I1:[!!0 0][;]
+
+# Range from 1..=n
+# n -> list
+⇡_.⊏:1:-.[.&⊂:1:-]!
+
+# Sum
+# list -> sum
+Σ_.⊣⊓1:[⊢!0][⊃:Σ+⊢]
+
+# Product
+# list -> product
+Π_.⊣⊓1:[⊢!0][⊃:Π*⊢]
+
+# General formula for reductions:
+# `F_.⊣⊓1:[⊢!0][⊃:F$⊢]`
+# where `F` is the reduction's name and `$` is a **dyadic** function
+
+# Length
+# list -> length
+⧻_.⊓1:[!!0 0][⊣⧻1+]
+
+# Explode. push all of a list onto the stack, with length on top
+# list -> length *items
+◌_.⧻..(([⊃):((]!)[)])
+
+# Reverse
+# list -> list
+⇌_◌1:-(⊏)[:⊂]
+
+#tests
+#these cannot actually be run here as this is a .drwm file, which only allows function definitions 
+#these tests are in tests/list_test.drw
+#1⊏ 2⊂ 3⊂?#〚3 〚2 〚1 , ,〛 ,〛 ,〛
+#.⊢?!#3
+#.⊣?!#〚2 〚1 , ,〛 ,〛
+#⊃?!!#3 〚2 〚1 , ,〛 ,〛
+#5⇡
+#.Σ:
+#.Π:?!!!#〚1 〚2 〚3 〚4 〚5 , ,〛 ,〛 ,〛 ,〛 ,〛 120 15
+#,⧻?!#0
+#1⊏⧻?!#1
+#1⊏ 2⊂ 3⊂⧻?!#3
+#5⇡⧻?!#5
+#5⇡◌?!!!!!!#5 1 2 3 4 5
+#5⇡⇌?!#〚5 〚4 〚3 〚2 〚1 , ,〛 ,〛 ,〛 ,〛 ,〛
+
+#TODO add:
+#pick(get nth element)
+#split (split at nth element)
+#join
+#splice (insert between nth and n+1th element)
+#set (set nth element to x)
+#stack commands that work on the begiinnig of a list (dup, flip, dip, undip, rot, unrot) 

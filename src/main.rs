@@ -1,5 +1,6 @@
+use clap::Parser;
 use std::collections::HashMap;
-use std::env;
+//use std::env;
 use std::fs;
 mod ast;
 mod item;
@@ -10,18 +11,34 @@ const THE_NUMBER_OF_RADIANS_IN_A_CIRCLE: f64 = 6.283185307179586;
 const EULERS_NUMBER: f64 = 2.7182818284590452;
 const THE_NUMBER_OF_DEGREES_IN_A_CIRCLE: f64 = 360.0;
 
-fn read() -> (Result<ast::AST, String>, HashMap<char, ast::AST>) {
-    let input: String = env::args().collect::<Vec<String>>()[1].clone();
-    let mut program = fs::read_to_string(input).expect("Should have been able to read the file");
+#[derive(Parser)]
+#[command(version, about, long_about = None)]
+struct Args {
+    /// File to run
+    file: String,
+
+    /// Modules to use
+    #[arg(short, long)]
+    mods: Option<String>,
+}
+
+fn readfile(name: String) -> String {
+    fs::read_to_string(&name).expect(&format!("Unable to find file: {name}"))
+}
+
+fn read() -> Result<(ast::AST, HashMap<char, ast::AST>), String> {
+    let args = Args::parse();
+    let mut program = readfile(args.file);
     let _ = program.pop();
     let mut functions: HashMap<char, String> = HashMap::new();
     let mut non_function: Vec<String> = Vec::new();
     for line in program.lines() {
+        //TODO refactor this its bad
         let line_chars: Vec<char> = line.chars().collect();
         let mut line_chars_no_comments: Vec<char> = Vec::new();
         for i in line_chars {
             if i == '#' {
-                break; //we've found ourselves a comment
+                break; //comment
             }
             line_chars_no_comments.push(i)
         }
@@ -42,19 +59,59 @@ fn read() -> (Result<ast::AST, String>, HashMap<char, ast::AST>) {
         }
     }
     let main_code = non_function.join(" ");
+
+    if let Some(modules) = args.mods {
+        for module in modules.split(' ') {
+            let module = readfile(module.to_string());
+            for line in module.lines() {
+                let no_comment: Vec<char>;
+                if let Some(pos) = line.find('#') {
+                    no_comment = line[..pos].chars().collect();
+                } else {
+                    no_comment = line.chars().collect();
+                }
+                match no_comment.len(){
+		    0=>continue,
+		    1=>return Err(format!("Modules must be all functions and all functions are delinated by a name and a binding (`_`). `{}` does not contain a binding",no_comment.into_iter().collect::<String>())),
+		    2.. =>{
+			if no_comment[1]=='_'{
+			    functions.insert(
+				no_comment[0],
+				no_comment[2..].to_vec().into_iter().collect(),
+			    );
+			}
+		    }
+		}
+            }
+        }
+    }
+
     let mut function_names: Vec<char> = Vec::new();
     for i in functions.keys() {
         function_names.push(*i);
     }
     let mut function_asts: HashMap<char, ast::AST> = HashMap::new();
+    let mut func_err: String = String::new();
+    let mut has_err = false;
     for (name, body) in &functions {
-        function_asts.insert(
-            *name,
-            ast::AST::new(body.to_string(), function_names.clone()).unwrap(),
-        );
+        let ast = ast::AST::new(body.to_string(), function_names.clone());
+        match ast {
+            Ok(goodast) => function_asts.insert(*name, goodast),
+            Err(err) => {
+                has_err = true;
+                func_err = err;
+                break;
+            }
+        };
+    }
+    if has_err {
+        return Err(func_err);
     }
     let main_ast = ast::AST::new(main_code, function_names);
-    return (main_ast, function_asts);
+    match main_ast {
+        Ok(goodmain_ast) => Ok((goodmain_ast, function_asts)),
+        Err(err) => Err(err),
+    }
 }
 fn eval(
     syntax_tree: ast::AST,
@@ -98,19 +155,19 @@ fn evallist(
                 ast::Commands::TurnCommand => drawing_turtle.turn(
                     data_stack
                         .pop()
-                        .unwrap_or(item::Item::from_num(0.0))
+                        .unwrap_or(item::Item::zero())
                         .get_number_or(0.0) as f32,
                 ),
-                ast::Commands::DuplicateCommand => data_stack.dup(),
-                ast::Commands::SwapCommand => data_stack.swap(),
+                ast::Commands::DuplicateCommand => data_stack.dup(item::Item::zero()),
+                ast::Commands::SwapCommand => data_stack.swap(item::Item::zero()),
                 ast::Commands::PopCommand => {
                     let _throwaway = data_stack.pop();
                 }
                 ast::Commands::RotCommand => {
                     //a b c -> c a b
-                    let a = data_stack.pop().unwrap_or(item::Item::from_num(0.0));
-                    let b = data_stack.pop().unwrap_or(item::Item::from_num(0.0));
-                    let c = data_stack.pop().unwrap_or(item::Item::from_num(0.0));
+                    let a = data_stack.pop().unwrap_or(item::Item::zero());
+                    let b = data_stack.pop().unwrap_or(item::Item::zero());
+                    let c = data_stack.pop().unwrap_or(item::Item::zero());
 
                     data_stack.push(b);
                     data_stack.push(a);
@@ -118,9 +175,9 @@ fn evallist(
                 }
                 ast::Commands::UnrotCommand => {
                     //a b c -> b c a
-                    let a = data_stack.pop().unwrap_or(item::Item::from_num(0.0));
-                    let b = data_stack.pop().unwrap_or(item::Item::from_num(0.0));
-                    let c = data_stack.pop().unwrap_or(item::Item::from_num(0.0));
+                    let a = data_stack.pop().unwrap_or(item::Item::zero());
+                    let b = data_stack.pop().unwrap_or(item::Item::zero());
+                    let c = data_stack.pop().unwrap_or(item::Item::zero());
 
                     data_stack.push(a);
                     data_stack.push(c);
@@ -130,7 +187,7 @@ fn evallist(
                 ast::Commands::AddCommand => dyadic_op(&|a, b| a + b, 0.0, data_stack),
                 ast::Commands::SubtractCommand => dyadic_op(&|a, b| a - b, 0.0, data_stack),
                 ast::Commands::MultiplyCommand => dyadic_op(&|a, b| a * b, 1.0, data_stack),
-                ast::Commands::DivideCommand => dyadic_op(&|a, b| a / b, 1.0, data_stack), //todo make return nil on zero division
+                ast::Commands::DivideCommand => dyadic_op(&|a, b| a / b, 1.0, data_stack),
                 ast::Commands::ModuloCommand => dyadic_op(&|a, b| a % b, 1.0, data_stack),
                 ast::Commands::DegreeCommand => {
                     if drawing_turtle.using_degrees() {
@@ -147,10 +204,7 @@ fn evallist(
                     }
                 }
                 ast::Commands::ColorCommand => {
-                    if data_stack
-                        .peek()
-                        .unwrap_or(&item::Item::from_num(0.0))
-                        .itemtype
+                    if data_stack.peek().unwrap_or(&item::Item::zero()).itemtype
                         == item::ItemType::Number
                     {
                         let r = data_stack
@@ -208,22 +262,30 @@ fn evallist(
                 ast::Commands::LessThanCommand => comp_op(&|a, b| a < b, data_stack),
                 ast::Commands::GreaterThanCommand => comp_op(&|a, b| a > b, data_stack),
                 ast::Commands::EqualCommand => comp_op(&|a, b| a == b, data_stack),
-                ast::Commands::DipCommand => data_stack.dip(dip_stack),
-                ast::Commands::UndipCommand => dip_stack.dip(data_stack),
+                ast::Commands::DipCommand => data_stack.dip(dip_stack, item::Item::zero()),
+                ast::Commands::UndipCommand => dip_stack.dip(data_stack, item::Item::zero()),
                 ast::Commands::BoxCommand => {
-                    let r = data_stack.pop().unwrap_or(item::Item::from_num(0.0));
-                    let g = data_stack.pop().unwrap_or(item::Item::from_num(0.0));
-                    let b = data_stack.pop().unwrap_or(item::Item::from_num(0.0));
+                    let r = data_stack.pop().unwrap_or(item::Item::zero());
+                    let g = data_stack.pop().unwrap_or(item::Item::zero());
+                    let b = data_stack.pop().unwrap_or(item::Item::zero());
                     data_stack.push(item::Item::from_box(item::DrwBox::new(r, g, b)));
                 }
                 ast::Commands::UnboxCommand => {
-                    let the_box = data_stack
-                        .pop()
-                        .unwrap_or(item::Item::from_box(item::DrwBox::from_nums(0.0, 0.0, 0.0)))
-                        .get_box();
-                    data_stack.push(the_box.b);
-                    data_stack.push(the_box.g);
-                    data_stack.push(the_box.r);
+                    if data_stack.peek().unwrap_or(&item::Item::zero()).itemtype
+                        != item::ItemType::Nil
+                    {
+                        let the_box = data_stack
+                            .pop()
+                            .unwrap_or(item::Item::from_box(item::DrwBox::from_nums(0.0, 0.0, 0.0)))
+                            .get_box();
+                        data_stack.push(the_box.b);
+                        data_stack.push(the_box.g);
+                        data_stack.push(the_box.r);
+                    } else {
+                        //to help reduce nil checks in code
+                        data_stack.push(item::Item::nil());
+                        data_stack.push(item::Item::nil());
+                    }
                 }
                 ast::Commands::IsBoxCommand => {
                     let item = data_stack.pop();
@@ -240,14 +302,14 @@ fn evallist(
                 }
                 ast::Commands::NilCommand => data_stack.push(item::Item::nil()),
                 ast::Commands::IsNilCommand => {
-                    let a = data_stack.pop().unwrap_or(item::Item::from_num(0.0));
+                    let a = data_stack.pop().unwrap_or(item::Item::zero());
                     data_stack.push(apply_is_nil(a));
                 }
                 _ => unreachable!(), //should never happen. make this "a bug was found in the interpreter" error
             },
             ast::ASTnodeType::ControlStructure => match node.structure.unwrap() {
                 ast::ControlStructures::RepeatLoop => {
-                    let n = data_stack.pop().unwrap_or(item::Item::from_num(0.0));
+                    let n = data_stack.pop().unwrap_or(item::Item::zero());
                     if n.itemtype == item::ItemType::Box {
                         panic!("Cannot iterate over boxes!\n Got: {n}")
                     }
@@ -306,20 +368,20 @@ fn main() {
     let mut drawing_turtle = turtle::Turtle::new();
 
     let asts_to_pass = read();
-    if asts_to_pass.0.is_ok() {
+    if let Ok(asts_to_pass) = asts_to_pass {
         let output = eval(
-            asts_to_pass.0.unwrap(),
+            asts_to_pass.0,
             asts_to_pass.1,
             &mut data_stack,
             &mut dip_stack,
             &mut drawing_turtle,
         );
         println!("{}", output);
+        if drawing_turtle.should_render() {
+            drawing_turtle.render();
+        }
     } else {
-        println!("{}", asts_to_pass.0.unwrap_err());
-    }
-    if drawing_turtle.should_render() {
-        drawing_turtle.render();
+        println!("{}", asts_to_pass.unwrap_err());
     }
 }
 fn dyadic_op(f: &dyn Fn(f64, f64) -> f64, default: f64, data_stack: &mut stack::Stack<item::Item>) {

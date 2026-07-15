@@ -25,17 +25,17 @@ where
     pub fn peek(&self) -> Option<&T> {
         self.stack.last()
     }
-    pub fn dip(&mut self, top: &mut Stack<T>) {
-        top.push(self.pop().unwrap())
+    pub fn dip(&mut self, top: &mut Stack<T>, default: T) {
+        top.push(self.pop().unwrap_or(default))
     }
-    pub fn swap(&mut self) {
-        let temp: T = self.pop().unwrap();
-        let temp2: T = self.pop().unwrap();
+    pub fn swap(&mut self, default: T) {
+        let temp: T = self.pop().unwrap_or(default.clone());
+        let temp2: T = self.pop().unwrap_or(default);
         self.push(temp);
         self.push(temp2);
     }
-    pub fn dup(&mut self) {
-        self.push(self.peek().unwrap().clone())
+    pub fn dup(&mut self, default: T) {
+        self.push(self.peek().unwrap_or(&default).clone())
     }
     pub fn to_string(&mut self) -> String {
         let mut out = "bottom\n".to_string();

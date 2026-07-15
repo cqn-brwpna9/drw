@@ -67,7 +67,7 @@
 > Only for nano. Sorry-not-sorry
 > Make your own if you want your own.
 > I may make emacs at some point.
-#### Not done
+#### Done (ish, still needs a printing and math lib)
 - imports
 > Some kind of meta-syntax/interpreter arguments/semantic comments. drw doesnt (and wont [I guess you could store a string in the recursive boxes, but theres no printing faclity \<yet\>]) have strings so must be not an actual command
 > A (small) stdlib, needs a:
@@ -78,15 +78,24 @@
 #### Done
 - isbox
 > no errors and easily coreced types(if you can even call them that) means it can be hard to figure out whats a box so this
+#### Not Done
+- more commands(exact(non-pervasive) match (`|` probably), getx, gety, setx, sety)
+#### Not Done
+- quoting
+- `"...'` to push a quote, `\`` to execute
+- needs to somehow represent an ast as a group of boxes and make boxes into asts, which will probably have an error for trying to execute a malformed ast
+- allows first class functions and self-modifying code
+- will not be able to produce regular functions (`"F_+'` is invalid)
+#### Not done
+- testing
+- add windows support
+- some unit-ish tests
 
-
-# This is the point at which Drw will be considered 0.1.0 under [Semantic Versioning](https://semver.org)
+# This is the point at which Drw will be considered 0.1.0
 
 ## later(may or may not happen):
 > more question marks means less likely that it happens
-- more turtle commands (goto/getpos and filling)?
-> would require significant(but not impossible) refactoring of turtle stuff, especally getpos
-> may be better to split goto/getpos into getx/gety/setx/sety
+- more turtle commands (filling)?
 - alingual docs??
 > I probably would be bad at this
 - toki pona docs?

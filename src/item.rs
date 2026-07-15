@@ -73,6 +73,13 @@ impl Item {
             boxed: None,
         }
     }
+    pub fn zero() -> Item {
+        Item {
+            itemtype: ItemType::Number,
+            number: Some(0.0),
+            boxed: None,
+        }
+    }
     pub fn get_number(self) -> f64 {
         match self.itemtype {
             ItemType::Number => self.number.unwrap(),
