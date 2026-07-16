@@ -16,7 +16,7 @@ color brightred "[ordu?e,]"
 color brightgreen "[\^~cs.!()UqSCfRI;]"
 
 # Dyads
-color brightblue "(:|\+|\-|\*|\/|\%|P|l|<|>|=)"
+color brightblue "(:|\+|\-|\*|\/|\%|P|l|<|>|=|\|)"
 
 # Triads
 color cyan "[B@&]"

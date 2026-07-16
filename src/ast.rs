@@ -56,6 +56,7 @@ pub enum Commands {
     UnrotCommand,
     NilCommand,
     IsNilCommand,
+    MatchCommand,
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -73,13 +74,13 @@ pub enum ASTnodeType {
     Function,
 }
 
-const ALLOWED_CHARS: [char; 52] = [
+const ALLOWED_CHARS: [char; 53] = [
     '^', '~', '.', ':', '!', '+', '-', '*', '/', '%', ' ', '0', '1', '2', '3', '4', '5', '6', '7',
     '8', '9', '[', ']', '{', '}', '(', ')', 'o', 'r', 'c', 'd', 'u', 's', '?', 'P', 'l', 'e', 'q',
-    'S', 'C', 'f', 'R', '>', '<', '=', 'B', 'U', 'I', '@', '&', ',', ';',
+    'S', 'C', 'f', 'R', '>', '<', '=', 'B', 'U', 'I', '@', '&', ',', ';', '|',
 ];
 
-const CONVERSION_MAP: [(char, Commands); 37] = [
+const CONVERSION_MAP: [(char, Commands); 38] = [
     ('^', Commands::ForwardCommand),
     ('~', Commands::TurnCommand),
     ('.', Commands::DuplicateCommand),
@@ -117,6 +118,7 @@ const CONVERSION_MAP: [(char, Commands); 37] = [
     ('&', Commands::UnrotCommand),
     (',', Commands::NilCommand),
     (';', Commands::IsNilCommand),
+    ('|', Commands::MatchCommand),
 ]; //just use HashMap::from when actually needed
 
 const BRACK_CONV_MAP: [(char, ControlStructures); 2] = [
@@ -124,9 +126,9 @@ const BRACK_CONV_MAP: [(char, ControlStructures); 2] = [
     ('{', ControlStructures::WhileLoop),
 ]; //ditto
 
-const ALLOWED_COMMANDS: [char; 37] = [
+const ALLOWED_COMMANDS: [char; 38] = [
     '^', '~', '.', ':', '!', '+', '-', '*', '/', '%', 'o', 'r', 'c', 'd', 'u', 's', '?', 'P', 'l',
-    'e', 'q', 'S', 'C', 'f', 'R', '>', '<', '=', '(', ')', 'B', 'U', 'I', '@', '&', ',', ';',
+    'e', 'q', 'S', 'C', 'f', 'R', '>', '<', '=', '(', ')', 'B', 'U', 'I', '@', '&', ',', ';', '|',
 ];
 
 const ALLOWED_BRACKETS: [char; 4] = ['[', ']', '{', '}'];

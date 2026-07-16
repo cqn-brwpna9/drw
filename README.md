@@ -61,6 +61,7 @@ Code: `%`
 
 Result: `a%b`
 #### Note: All math commands are pervasive over boxes, meaning `[a b c] d+`=>`[a+d b+d c+d]`, `[a b c] [d e f]+`=>`[a+d b+e c+f]` and `[a b [c d e]] [[f g [h i j]] k l]+`=>`[[f+a g+a [h+a i+a j+a]] k+b [l+c l+d l+e]]`
+#### In addition, all math commands return `,` if their input is `,`, even `=`. If you want to test if somthing is nil pervasivley, use `;`. Otherwise, use `|`.
 
 -# the above examples are not valid because box literals do not exist.
 
@@ -95,8 +96,9 @@ Result: `a%b`
 
 |Name|Symbol|Description|
 |---|---|---|
-|Nil|`,`|Pushes Nil to the stack, a value which means nothing. For all commands which interact with their values besides `;`, passing `,` as any of their arguments will return `,`. `,[...]` does nothing, and `,` is considered falsy.|
+|Nil|`,`|Pushes Nil to the stack, a value which means nothing. For all commands which interact with their values besides `;` and `|`, passing `,` as any of their arguments will return `,`. `,[...]` does nothing, and `,` is considered falsy.|
 |Is nil|`;`|Returns `1` if the top stack value is `,`, returning `0` otherwise, pervading over boxes.|
+|Match|`|`|Tests to see if the two top values of the stack exactly match. It does not follow any rules for pervasion or nil. `,|` can be thought of as a non-pervasive `;`|
 
 ## Importing
 To import a module, use the `-m` switch at the command line. modules are `.drwm` files, which can only contain function definitions.  

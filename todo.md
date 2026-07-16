@@ -79,7 +79,10 @@
 - isbox
 > no errors and easily coreced types(if you can even call them that) means it can be hard to figure out whats a box so this
 #### Not Done
-- more commands(exact(non-pervasive) match (`|` probably), getx, gety, setx, sety)
+- more commands
+[x] exact(non-pervasive) match `|`
+[ ] getx(x), gety(y)
+[ ] setx(X), sety(Y)
 #### Not Done
 - quoting
 - `"...'` to push a quote, `\`` to execute

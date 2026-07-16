@@ -25,7 +25,7 @@
 
 # Isempty. returns true on , and nothing else
 # list -> empty?
-⊓_.I1:[!!0 0][;]
+⊓_,|
 
 # Range from 1..=n
 # n -> list

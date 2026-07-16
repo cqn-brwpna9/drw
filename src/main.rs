@@ -305,6 +305,17 @@ fn evallist(
                     let a = data_stack.pop().unwrap_or(item::Item::zero());
                     data_stack.push(apply_is_nil(a));
                 }
+                ast::Commands::MatchCommand => {
+                    if let Some(a) = data_stack.pop() {
+                        if let Some(b) = data_stack.pop() {
+                            data_stack.push(item::Item::from_num(if a == b { 1.0 } else { 0.0 }));
+                        }else{
+			    data_stack.push(item::Item::zero());
+			}
+                    } else {
+                        data_stack.push(item::Item::zero());
+                    }
+                }
                 _ => unreachable!(), //should never happen. make this "a bug was found in the interpreter" error
             },
             ast::ASTnodeType::ControlStructure => match node.structure.unwrap() {

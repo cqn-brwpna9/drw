@@ -1,5 +1,7 @@
-⊛_.1>[.1:-⊛*] # calculates the factiorial of a number
-1⊛
+# requires the list module
+⊛_.1>[.1:-⊛*] # calculates the factorial of a number using recursion
+⧆_(1 1)[.1+(*)]! # calculates the factorial of a number using a repeat loop
+◴_⇡Π # caluclates the factorial of a number using the product of a range 
 2⊛
 3⊛
 4⊛
@@ -8,4 +10,22 @@
 7⊛
 8⊛
 9⊛
-10⊛
+
+2⧆
+3⧆
+4⧆
+5⧆
+6⧆
+7⧆
+8⧆
+9⧆
+
+2◴
+3◴
+4◴
+5◴
+6◴
+7◴
+8◴
+9◴
+
