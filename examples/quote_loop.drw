@@ -1,0 +1,4 @@
+# loops are for the weak
+# very quickly overflows stack
+# convienent for knowing call stack size (1525 in my case)
+1"(1+?).`'.`

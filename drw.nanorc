@@ -13,7 +13,7 @@ color orange "[0-9]"
 color brightred "[ordu?e,]"
 
 # Monads
-color brightgreen "[\^~cs.!()UqSCfRI;]"
+color brightgreen "[\^~cs.!()UqSCfRI;`]"
 
 # Dyads
 color brightblue "(:|\+|\-|\*|\/|\%|P|l|<|>|=|\|)"
@@ -22,7 +22,7 @@ color brightblue "(:|\+|\-|\*|\/|\%|P|l|<|>|=|\|)"
 color cyan "[B@&]"
 
 # Loops
-color brightyellow "(\[|\]|\{|\})"
+color brightyellow "(\[|\]|\{|\}|\"|')"
 
 # Function binding
 color purple "_"

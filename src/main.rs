@@ -70,18 +70,23 @@ fn read() -> Result<(ast::AST, HashMap<char, ast::AST>), String> {
                 } else {
                     no_comment = line.chars().collect();
                 }
-                match no_comment.len(){
-		    0=>continue,
-		    1=>return Err(format!("Modules must be all functions and all functions are delinated by a name and a binding (`_`). `{}` does not contain a binding",no_comment.into_iter().collect::<String>())),
-		    2.. =>{
-			if no_comment[1]=='_'{
-			    functions.insert(
-				no_comment[0],
-				no_comment[2..].to_vec().into_iter().collect(),
-			    );
-			}
-		    }
-		}
+                match no_comment.len() {
+                    0 => continue,
+                    1 => {
+                        return Err(format!(
+                            "Modules must be all functions and all functions are delinated by a name and a binding (`_`). `{}` does not contain a binding",
+                            no_comment.into_iter().collect::<String>()
+                        ));
+                    }
+                    2.. => {
+                        if no_comment[1] == '_' {
+                            functions.insert(
+                                no_comment[0],
+                                no_comment[2..].to_vec().into_iter().collect(),
+                            );
+                        }
+                    }
+                }
             }
         }
     }
@@ -130,7 +135,6 @@ fn eval(
     return data_stack.to_string();
 }
 
-#[allow(unreachable_patterns)]
 fn evallist(
     syntax_tree: Vec<ast::ASTnode>,
     functions: HashMap<char, ast::AST>,
@@ -309,14 +313,26 @@ fn evallist(
                     if let Some(a) = data_stack.pop() {
                         if let Some(b) = data_stack.pop() {
                             data_stack.push(item::Item::from_num(if a == b { 1.0 } else { 0.0 }));
-                        }else{
-			    data_stack.push(item::Item::zero());
-			}
+                        } else {
+                            data_stack.push(item::Item::zero());
+                        }
                     } else {
                         data_stack.push(item::Item::zero());
                     }
                 }
-                _ => unreachable!(), //should never happen. make this "a bug was found in the interpreter" error
+                ast::Commands::ExecCommand => {
+                    let quote = ast::ASTnode::from_item(
+                        data_stack.pop().unwrap_or(item::Item::nil()),
+                        &functions,
+                    );
+                    evallist(
+                        quote,
+                        functions.clone(),
+                        data_stack,
+                        dip_stack,
+                        drawing_turtle,
+                    );
+                }
             },
             ast::ASTnodeType::ControlStructure => match node.structure.unwrap() {
                 ast::ControlStructures::RepeatLoop => {
@@ -353,6 +369,9 @@ fn evallist(
                             drawing_turtle,
                         );
                     }
+                }
+                ast::ControlStructures::Quote => {
+                    data_stack.push(ast::ASTnode::to_item(node.children.unwrap()));
                 }
             },
             ast::ASTnodeType::Function => evallist(

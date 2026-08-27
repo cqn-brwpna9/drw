@@ -44,9 +44,9 @@ impl fmt::Display for DrwBox {
         write!(
             f,
             "〚{} {} {}〛",
-            self.clone().r.to_string(),
-            self.clone().g.to_string(),
-            self.clone().b.to_string(),
+            self.clone().r,
+            self.clone().g,
+            self.clone().b,
         )
     }
 }
@@ -105,12 +105,12 @@ impl Item {
             }
         }
     }
-    pub fn is_truthy(self) -> bool {
+    pub fn is_truthy(&self) -> bool {
         match self.itemtype {
             ItemType::Number => self.number.unwrap() != 0.0,
             ItemType::Nil => false,
             ItemType::Box => {
-                let item = *(self.boxed.unwrap());
+                let item = *(self.boxed.clone().unwrap());
                 if item != DrwBox::from_nums(0.0, 0.0, 0.0) {
                     item.r.is_truthy() || item.g.is_truthy() || item.b.is_truthy()
                 } else {
@@ -124,9 +124,9 @@ impl Item {
 impl fmt::Display for Item {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.itemtype {
-            ItemType::Number => write!(f, "{}", self.clone().get_number().to_string()),
+            ItemType::Number => write!(f, "{}", self.clone().get_number()),
             ItemType::Nil => write!(f, ","),
-            ItemType::Box => write!(f, "{}", self.clone().get_box().to_string()),
+            ItemType::Box => write!(f, "{}", self.clone().get_box()),
         }
     }
 }

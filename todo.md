@@ -83,7 +83,9 @@
 [x] exact(non-pervasive) match `|`
 [ ] getx(x), gety(y)
 [ ] setx(X), sety(Y)
-#### Not Done
+[ ] getheading
+[ ] setheading
+#### Done
 - quoting
 - `"...'` to push a quote, `\`` to execute
 - needs to somehow represent an ast as a group of boxes and make boxes into asts, which will probably have an error for trying to execute a malformed ast

@@ -42,7 +42,7 @@ where
         for i in &self.stack {
             out += &(i.to_string() + "\n");
         }
-        return out + "top\n";
+        out + "top\n"
     }
 }
 #[test]
@@ -86,11 +86,11 @@ fn dip_test() {
     let mut b: Stack<u8> = Stack::new();
     a.push(3);
     a.push(1);
-    a.dip(&mut b);
+    a.dip(&mut b, 0);
     assert_eq!(*b.peek().unwrap(), 1);
     assert_eq!(*a.peek().unwrap(), 3);
     a.push(2);
-    b.dip(&mut a);
+    b.dip(&mut a, 0);
     assert_eq!(b.length() as u8, 0);
     assert_eq!(a.pop().unwrap(), 1);
     assert_eq!(a.pop().unwrap(), 2);
@@ -101,7 +101,7 @@ fn swap_test() {
     let mut a: Stack<u8> = Stack::new();
     a.push(1);
     a.push(2);
-    a.swap();
+    a.swap(0);
     assert_eq!(a.pop().unwrap(), 1);
     assert_eq!(a.pop().unwrap(), 2);
 }
@@ -109,7 +109,7 @@ fn swap_test() {
 fn dup_test() {
     let mut a: Stack<u8> = Stack::new();
     a.push(1);
-    a.dup();
+    a.dup(0);
     assert_eq!(a.pop().unwrap(), 1);
     assert_eq!(a.pop().unwrap(), 1);
 }

@@ -1,3 +1,4 @@
+use crate::item;
 use crate::stack;
 use std::collections::HashMap;
 
@@ -17,7 +18,7 @@ pub struct ASTnode {
     pub children: Option<Vec<ASTnode>>,
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug, Hash, Copy)]
 pub enum Commands {
     ForwardCommand,
     TurnCommand,
@@ -57,12 +58,14 @@ pub enum Commands {
     NilCommand,
     IsNilCommand,
     MatchCommand,
+    ExecCommand,
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug, Hash, Copy)]
 pub enum ControlStructures {
     RepeatLoop,
     WhileLoop,
+    Quote,
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -74,13 +77,13 @@ pub enum ASTnodeType {
     Function,
 }
 
-const ALLOWED_CHARS: [char; 53] = [
+const ALLOWED_CHARS: [char; 56] = [
     '^', '~', '.', ':', '!', '+', '-', '*', '/', '%', ' ', '0', '1', '2', '3', '4', '5', '6', '7',
     '8', '9', '[', ']', '{', '}', '(', ')', 'o', 'r', 'c', 'd', 'u', 's', '?', 'P', 'l', 'e', 'q',
-    'S', 'C', 'f', 'R', '>', '<', '=', 'B', 'U', 'I', '@', '&', ',', ';', '|',
+    'S', 'C', 'f', 'R', '>', '<', '=', 'B', 'U', 'I', '@', '&', ',', ';', '|', '`', '"', '\'',
 ];
 
-const CONVERSION_MAP: [(char, Commands); 38] = [
+const CONVERSION_MAP: [(char, Commands); 39] = [
     ('^', Commands::ForwardCommand),
     ('~', Commands::TurnCommand),
     ('.', Commands::DuplicateCommand),
@@ -119,19 +122,22 @@ const CONVERSION_MAP: [(char, Commands); 38] = [
     (',', Commands::NilCommand),
     (';', Commands::IsNilCommand),
     ('|', Commands::MatchCommand),
+    ('`', Commands::ExecCommand),
 ]; //just use HashMap::from when actually needed
 
-const BRACK_CONV_MAP: [(char, ControlStructures); 2] = [
+const BRACK_CONV_MAP: [(char, ControlStructures); 3] = [
     ('[', ControlStructures::RepeatLoop),
     ('{', ControlStructures::WhileLoop),
+    ('"', ControlStructures::Quote),
 ]; //ditto
 
-const ALLOWED_COMMANDS: [char; 38] = [
+const ALLOWED_COMMANDS: [char; 39] = [
     '^', '~', '.', ':', '!', '+', '-', '*', '/', '%', 'o', 'r', 'c', 'd', 'u', 's', '?', 'P', 'l',
     'e', 'q', 'S', 'C', 'f', 'R', '>', '<', '=', '(', ')', 'B', 'U', 'I', '@', '&', ',', ';', '|',
+    '`',
 ];
 
-const ALLOWED_BRACKETS: [char; 4] = ['[', ']', '{', '}'];
+const ALLOWED_BRACKETS: [char; 6] = ['[', ']', '{', '}', '"', '\''];
 
 const NUMBER_CHARS: [char; 10] = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
@@ -145,18 +151,21 @@ fn verify(code_in: String, functions: Vec<char>) -> Result<Vec<char>, String> {
             if i == j {
                 out.push(i);
                 appended = true;
-                if i == '{' || i == '[' {
+                if i == '{' || i == '[' || i == '"' {
                     bracket_check_stack.push(i);
                 }
                 peek_bracket = match bracket_check_stack.peek() {
                     Some(n) => *n,
                     None => ' ',
                 };
-                if (i == '}' && peek_bracket == '{') || (i == ']' && peek_bracket == '[') {
+                if (i == '}' && peek_bracket == '{')
+                    || (i == ']' && peek_bracket == '[')
+                    || (i == '\'' && peek_bracket == '"')
+                {
                     let _throwaway = bracket_check_stack.pop();
                     break;
                 }
-                if i == ']' || i == '}' {
+                if i == ']' || i == '}' || i == '\'' {
                     return Err("Mismached brackets".to_string());
                 }
                 break;
@@ -177,7 +186,7 @@ fn verify(code_in: String, functions: Vec<char>) -> Result<Vec<char>, String> {
     if !bracket_check_stack.is_empty() {
         return Err("Mismached brackets".to_string());
     }
-    return Ok(out);
+    Ok(out)
 }
 impl AST {
     pub fn new(code_in: String, functions: Vec<char>) -> Result<Self, String> {
@@ -199,7 +208,7 @@ impl AST {
             code: code_in,
             node: head_node,
         };
-        return Ok(new_ast);
+        Ok(new_ast)
     }
 }
 impl ASTnode {
@@ -237,13 +246,15 @@ impl ASTnode {
                         if bracket_depth == 0 {
                             break;
                         }
-                        bracket_depth += if current_pos == ']' || current_pos == '}' {
-                            -1
-                        } else if current_pos == '{' || current_pos == '[' {
-                            1
-                        } else {
-                            0
-                        };
+                        bracket_depth +=
+                            if current_pos == ']' || current_pos == '}' || current_pos == '\'' {
+                                -1
+                            } else if current_pos == '{' || current_pos == '[' || current_pos == '"'
+                            {
+                                1
+                            } else {
+                                0
+                            };
                         code_to_push.push(current_pos);
                         idx += 1;
                     }
@@ -309,6 +320,170 @@ impl ASTnode {
                 idx += 1;
             }
         }
+    }
+    pub fn to_item(quote: Vec<ASTnode>) -> item::Item {
+        #[rustfmt::skip] // rustfmt likes to split up (Commands, char)
+        let bac_conv_map: HashMap<Commands, char> = HashMap::from(
+            TryInto::<[_; 39]>::try_into(
+		CONVERSION_MAP
+		    .iter()
+		    .map(|x| (x.1, x.0))
+		    .collect::<Vec<(Commands, char)>>(),
+	    )
+            .unwrap(),
+        );
+        let bac_ctl_map: HashMap<ControlStructures, char> = HashMap::from(
+            TryInto::<[_; 3]>::try_into(
+                BRACK_CONV_MAP
+                    .iter()
+                    .map(|x| (x.1, x.0))
+                    .collect::<Vec<(ControlStructures, char)>>(),
+            )
+            .unwrap(),
+        );
+        quote
+            .iter()
+            .map(|node| match node.nodetype {
+                ASTnodeType::Container => panic!("Waiter, theres a container in my quote!"),
+                ASTnodeType::Number => item::DrwBox::new(
+                    item::Item::zero(),
+                    item::Item::from_num(node.number.unwrap()),
+                    item::Item::nil()
+                ),
+                ASTnodeType::Command => {
+                    let x = bac_conv_map.get(&node.command.unwrap()).unwrap();
+                    let mut o = -1.0;
+                    for (idx, i) in ALLOWED_COMMANDS.iter().enumerate() {
+                        if i == x {
+                            o = idx as f64;
+                            break;
+                        }
+                    }
+                    if o == -1.0 {
+                        panic!("Bad command in quote construction");
+                    }
+                    item::DrwBox::new(
+                        item::Item::from_num(1.0),
+                        item::Item::from_num(o),
+                        item::Item::nil(),
+                    )
+                }
+                ASTnodeType::ControlStructure => {
+                    let x = bac_ctl_map.get(&node.structure.unwrap()).unwrap();
+                    let mut o = -1.0;
+                    for (idx, i) in ALLOWED_BRACKETS.iter().enumerate() {
+                        if i == x {
+                            o = idx as f64;
+                            break;
+                        }
+                    }
+                    if o == -1.0 {
+                        panic!("Bad ctl structure in quote construction");
+                    }
+                    item::DrwBox::new(
+                        item::Item::from_num(2.0),
+                        item::Item::from_num(o),
+                        ASTnode::to_item(node.children.clone().unwrap()),
+                    )
+                }
+                ASTnodeType::Function => item::DrwBox::new(
+                    item::Item::from_num(3.0),
+                    item::Item::from_num((node.function.unwrap() as u32) as f64),
+                    item::Item::nil()
+                ),
+            })
+            .rfold(item::Item::nil(), |acc, node| {
+                item::Item::from_box(item::DrwBox::new(
+                    item::Item::from_box(node),
+                    acc,
+                    item::Item::nil(),
+                ))
+            })
+    }
+    pub fn from_item(mut quote: item::Item, functions: &HashMap<char, AST>) -> Vec<ASTnode> {
+        let mut tokens = Vec::new();
+        let conv_map = HashMap::from(CONVERSION_MAP);
+        let brack_map = HashMap::from(BRACK_CONV_MAP);
+        while quote != item::Item::nil() {
+            if quote.itemtype != item::ItemType::Box {
+                panic!("the quote {quote} is not a box");
+            }
+            let bx = *(quote.boxed.unwrap());
+            quote = bx.g;
+            let tok = bx.r;
+            if tok.itemtype != item::ItemType::Box {
+                panic!("the token {tok} is not a box");
+            }
+            let tok = *(tok.boxed.unwrap());
+            let id = tok.r;
+            if id.itemtype != item::ItemType::Number {
+                panic!("{id} is not a number, and as such not a valid id for a quote token");
+            }
+            let n = tok.g;
+            if n.itemtype != item::ItemType::Number {
+                panic!("{n} is not a number, and as such not a valid id for a quote function identifier");
+            }
+            let n = n.number.unwrap();
+            let m = tok.b;
+            match id.number.unwrap() {
+                0.0 => tokens.push(ASTnode {
+                    nodetype: ASTnodeType::Number,
+                    command: None,
+                    structure: None,
+                    number: Some(n),
+                    function: None,
+                    children: None,
+                }),
+                1.0 => {
+                    let command = conv_map
+                        .get(&ALLOWED_COMMANDS[n as usize])
+                        .expect(&format!("{n} is not an allowed command id for quotes"));
+                    tokens.push(ASTnode {
+                        nodetype: ASTnodeType::Command,
+                        command: Some(*command),
+                        structure: None,
+                        number: None,
+                        function: None,
+                        children: None,
+                    });
+                }
+                2.0 => {
+                    if m.itemtype == item::ItemType::Number {
+                        panic!("numbers (like {m}) are not valid children of control structures");
+                    }
+                    let struc = brack_map
+                        .get(&ALLOWED_BRACKETS[n as usize])
+                        .expect(&format!("{n} is not an allowed structure id for quotes"));
+                    tokens.push(ASTnode {
+                        nodetype: ASTnodeType::ControlStructure,
+                        command: None,
+                        structure: Some(*struc),
+                        number: None,
+                        function: None,
+                        children: Some(ASTnode::from_item(m, &functions)),
+                    });
+                }
+                3.0 => {
+                    let u = char::from_u32(n as u32)
+                        .expect("could not make the charicter id {n} into a char.");
+                    if !functions.contains_key(&u) {
+                        panic!(
+                            "{u} (code {n}) is not a defined function. found in decoding a quote"
+                        );
+                    }
+                    tokens.push(ASTnode {
+                        nodetype: ASTnodeType::Function,
+                        command: None,
+                        structure: None,
+                        number: None,
+                        function: Some(u),
+                        children: None,
+                    });
+                }
+                x => panic!("{x} is not a recognised token type id for quote decoding"),
+            }
+        }
+        tokens
     }
 }
 
@@ -392,4 +567,7 @@ fn astnew_test() {
             function: None,
         }
     );
+    let quote_test: Result<AST, String> = AST::new("\"+-\"('`'`".to_string(), Vec::new());
+    println!("{:#?}", quote_test);
+    assert!(false);
 }
