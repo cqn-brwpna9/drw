@@ -348,7 +348,7 @@ impl ASTnode {
                 ASTnodeType::Number => item::DrwBox::new(
                     item::Item::zero(),
                     item::Item::from_num(node.number.unwrap()),
-                    item::Item::nil()
+                    item::Item::Nil,
                 ),
                 ASTnodeType::Command => {
                     let x = bac_conv_map.get(&node.command.unwrap()).unwrap();
@@ -365,7 +365,7 @@ impl ASTnode {
                     item::DrwBox::new(
                         item::Item::from_num(1.0),
                         item::Item::from_num(o),
-                        item::Item::nil(),
+                        item::Item::Nil,
                     )
                 }
                 ASTnodeType::ControlStructure => {
@@ -389,14 +389,14 @@ impl ASTnode {
                 ASTnodeType::Function => item::DrwBox::new(
                     item::Item::from_num(3.0),
                     item::Item::from_num((node.function.unwrap() as u32) as f64),
-                    item::Item::nil()
+                    item::Item::Nil,
                 ),
             })
-            .rfold(item::Item::nil(), |acc, node| {
+            .rfold(item::Item::Nil, |acc, node| {
                 item::Item::from_box(item::DrwBox::new(
                     item::Item::from_box(node),
                     acc,
-                    item::Item::nil(),
+                    item::Item::Nil,
                 ))
             })
     }
@@ -404,83 +404,89 @@ impl ASTnode {
         let mut tokens = Vec::new();
         let conv_map = HashMap::from(CONVERSION_MAP);
         let brack_map = HashMap::from(BRACK_CONV_MAP);
-        while quote != item::Item::nil() {
-            if quote.itemtype != item::ItemType::Box {
+        while quote != item::Item::Nil {
+            if let item::Item::Box(bx) = quote {
+                quote = bx.g;
+                let tok = bx.r;
+                if let item::Item::Box(tok) = tok {
+                    let id = match tok.r {
+                        item::Item::Number(n) => n,
+                        #[rustfmt::skip]
+			x => panic!("{x} is not a number, and as such not a valid id for a quote token"),
+                    };
+
+                    let n = match tok.g {
+                        item::Item::Number(n) => n,
+                        x => panic!(
+                            "{x} is not a number, and as such not a valid id for a quote function identifier"
+                        ),
+                    };
+
+                    let m = tok.b;
+                    match id {
+                        0.0 => tokens.push(ASTnode {
+                            nodetype: ASTnodeType::Number,
+                            command: None,
+                            structure: None,
+                            number: Some(n),
+                            function: None,
+                            children: None,
+                        }),
+                        1.0 => {
+                            let command = conv_map
+                                .get(&ALLOWED_COMMANDS[n as usize])
+                                .expect(&format!("{n} is not an allowed command id for quotes"));
+                            tokens.push(ASTnode {
+                                nodetype: ASTnodeType::Command,
+                                command: Some(*command),
+                                structure: None,
+                                number: None,
+                                function: None,
+                                children: None,
+                            });
+                        }
+                        2.0 => {
+                            if let item::Item::Number(m) = m {
+                                panic!(
+                                    "numbers (like {m}) are not valid children of control structures"
+                                );
+                            }
+                            let struc = brack_map
+                                .get(&ALLOWED_BRACKETS[n as usize])
+                                .expect(&format!("{n} is not an allowed structure id for quotes"));
+                            tokens.push(ASTnode {
+                                nodetype: ASTnodeType::ControlStructure,
+                                command: None,
+                                structure: Some(*struc),
+                                number: None,
+                                function: None,
+                                children: Some(ASTnode::from_item(m, &functions)),
+                            });
+                        }
+                        3.0 => {
+                            let u = char::from_u32(n as u32)
+                                .expect("could not make the charicter id {n} into a char.");
+                            if !functions.contains_key(&u) {
+                                panic!(
+                                    "{u} (code {n}) is not a defined function. found in decoding a quote"
+                                );
+                            }
+                            tokens.push(ASTnode {
+                                nodetype: ASTnodeType::Function,
+                                command: None,
+                                structure: None,
+                                number: None,
+                                function: Some(u),
+                                children: None,
+                            });
+                        }
+                        x => panic!("{x} is not a recognised token type id for quote decoding"),
+                    }
+                } else {
+                    panic!("the token {tok} is not a box");
+                }
+            } else {
                 panic!("the quote {quote} is not a box");
-            }
-            let bx = *(quote.boxed.unwrap());
-            quote = bx.g;
-            let tok = bx.r;
-            if tok.itemtype != item::ItemType::Box {
-                panic!("the token {tok} is not a box");
-            }
-            let tok = *(tok.boxed.unwrap());
-            let id = tok.r;
-            if id.itemtype != item::ItemType::Number {
-                panic!("{id} is not a number, and as such not a valid id for a quote token");
-            }
-            let n = tok.g;
-            if n.itemtype != item::ItemType::Number {
-                panic!("{n} is not a number, and as such not a valid id for a quote function identifier");
-            }
-            let n = n.number.unwrap();
-            let m = tok.b;
-            match id.number.unwrap() {
-                0.0 => tokens.push(ASTnode {
-                    nodetype: ASTnodeType::Number,
-                    command: None,
-                    structure: None,
-                    number: Some(n),
-                    function: None,
-                    children: None,
-                }),
-                1.0 => {
-                    let command = conv_map
-                        .get(&ALLOWED_COMMANDS[n as usize])
-                        .expect(&format!("{n} is not an allowed command id for quotes"));
-                    tokens.push(ASTnode {
-                        nodetype: ASTnodeType::Command,
-                        command: Some(*command),
-                        structure: None,
-                        number: None,
-                        function: None,
-                        children: None,
-                    });
-                }
-                2.0 => {
-                    if m.itemtype == item::ItemType::Number {
-                        panic!("numbers (like {m}) are not valid children of control structures");
-                    }
-                    let struc = brack_map
-                        .get(&ALLOWED_BRACKETS[n as usize])
-                        .expect(&format!("{n} is not an allowed structure id for quotes"));
-                    tokens.push(ASTnode {
-                        nodetype: ASTnodeType::ControlStructure,
-                        command: None,
-                        structure: Some(*struc),
-                        number: None,
-                        function: None,
-                        children: Some(ASTnode::from_item(m, &functions)),
-                    });
-                }
-                3.0 => {
-                    let u = char::from_u32(n as u32)
-                        .expect("could not make the charicter id {n} into a char.");
-                    if !functions.contains_key(&u) {
-                        panic!(
-                            "{u} (code {n}) is not a defined function. found in decoding a quote"
-                        );
-                    }
-                    tokens.push(ASTnode {
-                        nodetype: ASTnodeType::Function,
-                        command: None,
-                        structure: None,
-                        number: None,
-                        function: Some(u),
-                        children: None,
-                    });
-                }
-                x => panic!("{x} is not a recognised token type id for quote decoding"),
             }
         }
         tokens

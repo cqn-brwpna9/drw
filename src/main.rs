@@ -147,9 +147,7 @@ fn evallist(
             ast::ASTnodeType::Number => data_stack.push(item::Item::from_num(node.number.unwrap())),
             ast::ASTnodeType::Command => match node.command.unwrap() {
                 ast::Commands::ForwardCommand => {
-                    if data_stack.peek().unwrap_or(&item::Item::nil()).itemtype
-                        == item::ItemType::Nil
-                    {
+                    if data_stack.peek().unwrap_or(&item::Item::Nil) == &item::Item::Nil {
                         let _throwaway = data_stack.pop();
                     } else {
                         drawing_turtle.forward(data_stack.pop().unwrap().get_number_or(0.0) as f32);
@@ -208,8 +206,7 @@ fn evallist(
                     }
                 }
                 ast::Commands::ColorCommand => {
-                    if data_stack.peek().unwrap_or(&item::Item::zero()).itemtype
-                        == item::ItemType::Number
+                    if let item::Item::Number(_) = data_stack.peek().unwrap_or(&item::Item::zero())
                     {
                         let r = data_stack
                             .pop()
@@ -224,7 +221,7 @@ fn evallist(
                             .unwrap_or(item::Item::from_num(255.0))
                             .get_number();
                         drawing_turtle.set_color(r as u8, g as u8, b as u8);
-                    } else if data_stack.peek().unwrap().itemtype == item::ItemType::Nil {
+                    } else if data_stack.peek().unwrap() == &item::Item::Nil {
                         //unwrap_or is unneeded because empty stack was checked for in isnum check
                         let _throwaway = data_stack.pop();
                     } else {
@@ -244,15 +241,17 @@ fn evallist(
                 ast::Commands::PenDownCommand => drawing_turtle.pen_down(),
                 ast::Commands::PenUpCommand => drawing_turtle.pen_up(),
                 ast::Commands::SizeCommand => {
-                    if data_stack.peek().unwrap_or(&item::Item::nil()).itemtype
-                        == item::ItemType::Nil
-                    {
+                    if data_stack.peek().unwrap_or(&item::Item::Nil) == &item::Item::Nil {
                         let _throwaway = data_stack.pop();
                     } else {
                         drawing_turtle.set_pen_size(data_stack.pop().unwrap().get_number() as f32);
                     }
                 }
-                ast::Commands::DebugCommand => println!("{}", data_stack.to_string()),
+                ast::Commands::DebugCommand => println!(
+                    "dip:{}\ndata:{}",
+                    dip_stack.to_string(),
+                    data_stack.to_string()
+                ),
                 ast::Commands::PowerCommand => dyadic_op(&|a, b| a.powf(b), 1.0, data_stack),
                 ast::Commands::LogCommand => dyadic_op(&|a, b| a.log(b), EULERS_NUMBER, data_stack),
                 ast::Commands::EulerNumCommand => {
@@ -275,9 +274,7 @@ fn evallist(
                     data_stack.push(item::Item::from_box(item::DrwBox::new(r, g, b)));
                 }
                 ast::Commands::UnboxCommand => {
-                    if data_stack.peek().unwrap_or(&item::Item::zero()).itemtype
-                        != item::ItemType::Nil
-                    {
+                    if data_stack.peek().unwrap_or(&item::Item::zero()) != &item::Item::Nil {
                         let the_box = data_stack
                             .pop()
                             .unwrap_or(item::Item::from_box(item::DrwBox::from_nums(0.0, 0.0, 0.0)))
@@ -287,15 +284,15 @@ fn evallist(
                         data_stack.push(the_box.r);
                     } else {
                         //to help reduce nil checks in code
-                        data_stack.push(item::Item::nil());
-                        data_stack.push(item::Item::nil());
+                        data_stack.push(item::Item::Nil);
+                        data_stack.push(item::Item::Nil);
                     }
                 }
                 ast::Commands::IsBoxCommand => {
                     let item = data_stack.pop();
                     data_stack.push(item::Item::from_num(match item {
                         Some(i) => {
-                            if i.itemtype == item::ItemType::Box {
+                            if let item::Item::Box(_) = i {
                                 1.0
                             } else {
                                 0.0
@@ -304,7 +301,7 @@ fn evallist(
                         None => 0.0,
                     }))
                 }
-                ast::Commands::NilCommand => data_stack.push(item::Item::nil()),
+                ast::Commands::NilCommand => data_stack.push(item::Item::Nil),
                 ast::Commands::IsNilCommand => {
                     let a = data_stack.pop().unwrap_or(item::Item::zero());
                     data_stack.push(apply_is_nil(a));
@@ -322,7 +319,7 @@ fn evallist(
                 }
                 ast::Commands::ExecCommand => {
                     let quote = ast::ASTnode::from_item(
-                        data_stack.pop().unwrap_or(item::Item::nil()),
+                        data_stack.pop().unwrap_or(item::Item::Nil),
                         &functions,
                     );
                     evallist(
@@ -337,7 +334,7 @@ fn evallist(
             ast::ASTnodeType::ControlStructure => match node.structure.unwrap() {
                 ast::ControlStructures::RepeatLoop => {
                     let n = data_stack.pop().unwrap_or(item::Item::zero());
-                    if n.itemtype == item::ItemType::Box {
+                    if let item::Item::Box(n) = n {
                         panic!("Cannot iterate over boxes!\n Got: {n}")
                     }
                     let num: f64 = n.get_number_or(0.0);
@@ -421,34 +418,38 @@ fn dyadic_op(f: &dyn Fn(f64, f64) -> f64, default: f64, data_stack: &mut stack::
 }
 //there is probably some optimization that could be done here because you can quicken somthing once you know one arg is numeric
 fn _apply_dyadic_op(f: &dyn Fn(f64, f64) -> f64, a: item::Item, b: item::Item) -> item::Item {
-    if a.itemtype == item::ItemType::Nil || b.itemtype == item::ItemType::Nil {
-        item::Item::nil()
+    if a == item::Item::Nil || b == item::Item::Nil {
+        item::Item::Nil
     } else {
-        if a.itemtype == item::ItemType::Number {
-            if b.itemtype == item::ItemType::Number {
+        if let item::Item::Number(a) = a {
+            if let item::Item::Number(b) = b {
                 //a and b are both numbers, so just normally apply
-                let result = f(a.get_number(), b.get_number());
+                let result = f(a, b);
                 //protect the user from NaNs and the like
                 if result.is_finite() {
                     item::Item::from_num(result)
                 } else {
-                    item::Item::nil()
+                    item::Item::Nil
                 }
             } else {
-                //a is a number, b is a box so apply to all elements of b using this function
+                //a is a number, b is a box so partially apply f to a, then use _apply_monadic_op on that
+                let f = &|b| f(a, b);
+
                 item::Item::from_box(item::DrwBox::new(
-                    _apply_dyadic_op(f, a.clone(), b.clone().get_box().r),
-                    _apply_dyadic_op(f, a.clone(), b.clone().get_box().g),
-                    _apply_dyadic_op(f, a.clone(), b.clone().get_box().b),
+                    _apply_monadic_op(f, b.clone().get_box().r),
+                    _apply_monadic_op(f, b.clone().get_box().g),
+                    _apply_monadic_op(f, b.clone().get_box().b),
                 ))
             }
         } else {
-            if b.itemtype == item::ItemType::Number {
+            if let item::Item::Number(b) = b {
                 //a is a box and b is a number, so do the same thing as (num, box)
+                let f = &|a| f(a, b);
+
                 item::Item::from_box(item::DrwBox::new(
-                    _apply_dyadic_op(f, a.clone().get_box().r, b.clone()),
-                    _apply_dyadic_op(f, a.clone().get_box().g, b.clone()),
-                    _apply_dyadic_op(f, a.clone().get_box().b, b.clone()),
+                    _apply_monadic_op(f, a.clone().get_box().r),
+                    _apply_monadic_op(f, a.clone().get_box().g),
+                    _apply_monadic_op(f, a.clone().get_box().b),
                 ))
             } else {
                 //both are boxes so ~~its scary~~ it applys each element to the one in the other arg
@@ -466,20 +467,20 @@ fn monadic_op(f: &dyn Fn(f64) -> f64, default: f64, data_stack: &mut stack::Stac
     data_stack.push(_apply_monadic_op(f, a));
 }
 fn _apply_monadic_op(f: &dyn Fn(f64) -> f64, a: item::Item) -> item::Item {
-    match a.itemtype {
-        item::ItemType::Number => {
-            let result = f(a.get_number());
+    match a {
+        item::Item::Number(a) => {
+            let result = f(a);
             if result.is_finite() {
                 item::Item::from_num(result)
             } else {
-                item::Item::nil()
+                item::Item::Nil
             }
         }
-        item::ItemType::Nil => item::Item::nil(),
-        item::ItemType::Box => item::Item::from_box(item::DrwBox::new(
-            _apply_monadic_op(f, a.clone().get_box().r),
-            _apply_monadic_op(f, a.clone().get_box().g),
-            _apply_monadic_op(f, a.clone().get_box().b),
+        item::Item::Nil => item::Item::Nil,
+        item::Item::Box(a) => item::Item::from_box(item::DrwBox::new(
+            _apply_monadic_op(f, a.r),
+            _apply_monadic_op(f, a.g),
+            _apply_monadic_op(f, a.b),
         )),
     }
 }
@@ -503,13 +504,13 @@ fn comp_op(f: &dyn Fn(f64, f64) -> bool, data_stack: &mut stack::Stack<item::Ite
 //like _apply_monadic_op, but only is nil and has no nil guards
 
 fn apply_is_nil(a: item::Item) -> item::Item {
-    match a.itemtype {
-        item::ItemType::Nil => item::Item::from_num(1.0),
-        item::ItemType::Number => item::Item::from_num(0.0),
-        item::ItemType::Box => item::Item::from_box(item::DrwBox::new(
-            apply_is_nil(a.clone().get_box().r),
-            apply_is_nil(a.clone().get_box().g),
-            apply_is_nil(a.clone().get_box().b),
+    match a {
+        item::Item::Nil => item::Item::from_num(1.0),
+        item::Item::Number(_) => item::Item::from_num(0.0),
+        item::Item::Box(bx) => item::Item::from_box(item::DrwBox::new(
+            apply_is_nil(bx.r),
+            apply_is_nil(bx.g),
+            apply_is_nil(bx.b),
         )),
     }
 }

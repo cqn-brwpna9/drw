@@ -13,7 +13,7 @@ color orange "[0-9]"
 color brightred "[ordu?e,]"
 
 # Monads
-color brightgreen "[\^~cs.!()UqSCfRI;`]"
+color brightgreen "[~cs.!()UqSCfRI;`^]"
 
 # Dyads
 color brightblue "(:|\+|\-|\*|\/|\%|P|l|<|>|=|\|)"

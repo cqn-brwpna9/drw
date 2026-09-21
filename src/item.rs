@@ -1,12 +1,4 @@
-//TODO use an enum instead of a tagged union thingy
 use std::fmt;
-
-#[derive(PartialEq, Clone, Debug)]
-pub enum ItemType {
-    Number,
-    Box,
-    Nil,
-}
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct DrwBox {
@@ -16,10 +8,10 @@ pub struct DrwBox {
 }
 
 #[derive(PartialEq, Clone, Debug)]
-pub struct Item {
-    pub itemtype: ItemType,
-    pub number: Option<f64>,
-    pub boxed: Option<Box<DrwBox>>,
+pub enum Item {
+    Nil,
+    Number(f64),
+    Box(Box<DrwBox>),
 }
 
 impl DrwBox {
@@ -52,81 +44,55 @@ impl fmt::Display for DrwBox {
 }
 
 impl Item {
-    pub fn from_num(item: f64) -> Item {
-        Item {
-            itemtype: ItemType::Number,
-            number: Some(item),
-            boxed: None,
-        }
+    pub fn from_num(n: f64) -> Item {
+        Item::Number(n)
     }
-    pub fn from_box(item: DrwBox) -> Item {
-        Item {
-            itemtype: ItemType::Box,
-            number: None,
-            boxed: Some(Box::new(item)),
-        }
-    }
-    pub fn nil() -> Item {
-        Item {
-            itemtype: ItemType::Nil,
-            number: None,
-            boxed: None,
-        }
+    pub fn from_box(bx: DrwBox) -> Item {
+        Item::Box(Box::new(bx))
     }
     pub fn zero() -> Item {
-        Item {
-            itemtype: ItemType::Number,
-            number: Some(0.0),
-            boxed: None,
-        }
+        Item::Number(0.0)
     }
     pub fn get_number(self) -> f64 {
-        match self.itemtype {
-            ItemType::Number => self.number.unwrap(),
-            ItemType::Box => self.boxed.unwrap().r.get_number(),
-            ItemType::Nil => {
+        match self {
+            Item::Number(n) => n,
+            Item::Box(bx) => bx.r.get_number(),
+            Item::Nil => {
                 panic!("Tried to call get_number on a nil value. This is a bug in the interpreter")
             }
         }
     }
     pub fn get_number_or(self, or: f64) -> f64 {
-        match self.itemtype {
-            ItemType::Number => self.number.unwrap(),
-            ItemType::Box => self.boxed.unwrap().r.get_number(),
-            ItemType::Nil => or,
+        match self {
+            Item::Number(n) => n,
+            Item::Box(bx) => bx.r.get_number(),
+            Item::Nil => or,
         }
     }
     pub fn get_box(self) -> DrwBox {
-        match self.itemtype {
-            ItemType::Box => *(self.boxed.unwrap()),
-            ItemType::Number => DrwBox::from_nums(self.number.unwrap(), 0.0, 0.0),
-            ItemType::Nil => {
+        match self {
+            Item::Box(bx) => *bx,
+            Item::Number(n) => DrwBox::from_nums(n, 0.0, 0.0),
+            Item::Nil => {
                 panic!("Tried to call get_box on a nil value. This is a bug in the interpreter")
             }
         }
     }
     pub fn is_truthy(&self) -> bool {
-        match self.itemtype {
-            ItemType::Number => self.number.unwrap() != 0.0,
-            ItemType::Nil => false,
-            ItemType::Box => {
-                let item = *(self.boxed.clone().unwrap());
-                if item != DrwBox::from_nums(0.0, 0.0, 0.0) {
-                    item.r.is_truthy() || item.g.is_truthy() || item.b.is_truthy()
-                } else {
-                    false
-                }
-            }
+        match self {
+            Item::Number(n) => *n != 0.0,
+            Item::Nil => false,
+            Item::Box(bx) => bx.r.is_truthy() || bx.g.is_truthy() || bx.b.is_truthy(),
         }
     }
 }
 
 impl fmt::Display for Item {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self.itemtype {
-            ItemType::Number => write!(f, "{}", self.clone().get_number()),
-            ItemType::Nil => write!(f, ","),
-            ItemType::Box => write!(f, "{}", self.clone().get_box()),
+        match self {
+            Item::Number(n) => write!(f, "{}", n),
+            Item::Nil => write!(f, ","),
+            Item::Box(bx) => write!(f, "{}", *bx),
         }
     }
 }

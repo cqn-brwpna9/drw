@@ -39,9 +39,11 @@
 # list -> product
 Π_.⊣⊓1:[⊢!0][⊃:Π*⊢]
 
-# General formula for reductions:
-# `F_.⊣⊓1:[⊢!0][⊃:F$⊢]`
-# where `F` is the reduction's name and `$` is a **dyadic** function
+# Reduce/fold
+# Σ and Π are faster than "+'∧ and "*'∧ (and faster for golfing)
+# to fold, ⊂ the accumulator onto the list before ∧ing
+# list quote -> reduction
+∧_(.⊣⊓1:[)!⊢!0][⊃).(:(∧))`⊢]
 
 # Length
 # list -> length
@@ -70,7 +72,12 @@
 #1⊏ 2⊂ 3⊂⧻?!#3
 #5⇡⧻?!#5
 #5⇡◌?!!!!!!#5 1 2 3 4 5
-#5⇡⇌?!#〚5 〚4 〚3 〚2 〚1 , ,〛 ,〛 ,〛 ,〛 ,〛
+#5⇡⇌?!#〚5 〚4 〚3 〚2 〚1 , ,〛 ,〛 ,〛 ,〛 ,
+#5⇡
+#.."+'∧
+#&"*'∧
+#:"1+*'∧?!!! # 600 120 15
+# one would expect this to be 720 (2*3*4*5*6), but this is 600 (2*3*4*5*5) because the function is applied to agrigate, so the function is not applied to the last number 
 
 #TODO add:
 #pick(get nth element)
@@ -79,3 +86,8 @@
 #splice (insert between nth and n+1th element)
 #set (set nth element to x)
 #stack commands that work on the begiinnig of a list (dup, flip, dip, undip, rot, unrot) 
+#"under"pick(modify nth elem w/ a quote)
+#sliding windows
+#filter
+#scan
+#table/outer product

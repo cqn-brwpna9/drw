@@ -39,7 +39,7 @@
 > - [x] Lisp-Style lists from nested boxes
 > - [x] Operation pervasiveness for boxes
 >
-> There are ~~2~~ *1* possible types of runtime errors:
+> There are ~~2~~ ~~1~~ 2 again possible types of runtime errors:
 > ~~- "cannot {operator} {arg1} and {arg2}" ~~
 >
 > ~~This happens when one tries to call a dyadic operator on two nested boxes because trying to add `[1 2 [3 [4 5 6] 7]]` to `[1 [2 3 4] 5]` doesnt really make sense.~~
@@ -54,6 +54,7 @@
 >
 >
 > `{}` loops count any value besides `,`, `0` or any box made of those two values as truthy 
+> - somthing about quote decoding, see quoting.md for this
 #### Done
 - nil/null value
 - Iteration is calling get_number on nil
