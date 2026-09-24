@@ -54,6 +54,7 @@
 >
 >
 > `{}` loops count any value besides `,`, `0` or any box made of those two values as truthy 
+>
 > - somthing about quote decoding, see quoting.md for this
 #### Done
 - nil/null value
@@ -82,9 +83,9 @@
 #### Not Done
 - more commands
 [x] exact(non-pervasive) match `|`
-[ ] getx(x), gety(y)
+[x] getx(x), gety(y)
 [ ] setx(X), sety(Y)
-[ ] getheading
+[x] getheading
 [ ] setheading
 #### Done
 - quoting

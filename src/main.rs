@@ -330,6 +330,10 @@ fn evallist(
                         drawing_turtle,
                     );
                 }
+
+		ast::Commands::GetXCommand => data_stack.push(item::Item::from_num(drawing_turtle.get_x())),
+		ast::Commands::GetYCommand => data_stack.push(item::Item::from_num(drawing_turtle.get_y())),
+		ast::Commands::GetHCommand => data_stack.push(item::Item::from_num(drawing_turtle.get_h())),
             },
             ast::ASTnodeType::ControlStructure => match node.structure.unwrap() {
                 ast::ControlStructures::RepeatLoop => {

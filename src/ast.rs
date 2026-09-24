@@ -59,6 +59,9 @@ pub enum Commands {
     IsNilCommand,
     MatchCommand,
     ExecCommand,
+    GetXCommand,
+    GetYCommand,
+    GetHCommand,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug, Hash, Copy)]
@@ -77,13 +80,14 @@ pub enum ASTnodeType {
     Function,
 }
 
-const ALLOWED_CHARS: [char; 56] = [
+const ALLOWED_CHARS: [char; 59] = [
     '^', '~', '.', ':', '!', '+', '-', '*', '/', '%', ' ', '0', '1', '2', '3', '4', '5', '6', '7',
     '8', '9', '[', ']', '{', '}', '(', ')', 'o', 'r', 'c', 'd', 'u', 's', '?', 'P', 'l', 'e', 'q',
-    'S', 'C', 'f', 'R', '>', '<', '=', 'B', 'U', 'I', '@', '&', ',', ';', '|', '`', '"', '\'',
+    'S', 'C', 'f', 'R', '>', '<', '=', 'B', 'U', 'I', '@', '&', ',', ';', '|', '`', '"', '\'', 'x',
+    'y', 'h',
 ];
 
-const CONVERSION_MAP: [(char, Commands); 39] = [
+const CONVERSION_MAP: [(char, Commands); 42] = [
     ('^', Commands::ForwardCommand),
     ('~', Commands::TurnCommand),
     ('.', Commands::DuplicateCommand),
@@ -123,6 +127,9 @@ const CONVERSION_MAP: [(char, Commands); 39] = [
     (';', Commands::IsNilCommand),
     ('|', Commands::MatchCommand),
     ('`', Commands::ExecCommand),
+    ('x', Commands::GetXCommand),
+    ('y', Commands::GetYCommand),
+    ('h', Commands::GetHCommand),
 ]; //just use HashMap::from when actually needed
 
 const BRACK_CONV_MAP: [(char, ControlStructures); 3] = [
@@ -131,10 +138,10 @@ const BRACK_CONV_MAP: [(char, ControlStructures); 3] = [
     ('"', ControlStructures::Quote),
 ]; //ditto
 
-const ALLOWED_COMMANDS: [char; 39] = [
+const ALLOWED_COMMANDS: [char; 42] = [
     '^', '~', '.', ':', '!', '+', '-', '*', '/', '%', 'o', 'r', 'c', 'd', 'u', 's', '?', 'P', 'l',
     'e', 'q', 'S', 'C', 'f', 'R', '>', '<', '=', '(', ')', 'B', 'U', 'I', '@', '&', ',', ';', '|',
-    '`',
+    '`', 'x', 'y', 'h',
 ];
 
 const ALLOWED_BRACKETS: [char; 6] = ['[', ']', '{', '}', '"', '\''];

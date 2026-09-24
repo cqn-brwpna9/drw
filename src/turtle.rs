@@ -5,6 +5,7 @@ use raylib::prelude::*;
 
 const WINDOW_WIDTH: i32 = 800;
 const WINDOW_HEIGHT: i32 = 450;
+const REL_ZERO: (f32, f32) = ((WINDOW_WIDTH as f32) / 2.0, (WINDOW_HEIGHT as f32) / 2.0);
 const THE_NUMBER_OF_RADIANS_IN_A_CIRCLE: f32 = 6.283185307179586;
 const THE_NUMBER_OF_DEGREES_IN_A_CIRCLE: f32 = 360.0;
 
@@ -14,20 +15,20 @@ pub enum TurnModes {
     RADIAN,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Point {
     x: f32,
     y: f32,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct TurtleColor {
     r: u8,
     g: u8,
     b: u8,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct TurtleHistoryFrame {
     start_pos: Point,
     end_pos: Point,
@@ -45,12 +46,24 @@ pub struct Turtle {
     pen_state: bool,
 }
 
+fn deg_to_rad(x: f32) -> f32 {
+    x * (THE_NUMBER_OF_RADIANS_IN_A_CIRCLE / THE_NUMBER_OF_DEGREES_IN_A_CIRCLE)
+}
+fn rad_to_deg(x: f32) -> f32 {
+    x * (THE_NUMBER_OF_DEGREES_IN_A_CIRCLE / THE_NUMBER_OF_RADIANS_IN_A_CIRCLE)
+}
 impl Point {
     pub fn new(newx: f32, newy: f32) -> Self {
         Point { x: newx, y: newy }
     }
     pub fn to_vector2(&self) -> Vector2 {
         Vector2::new(self.x, self.y)
+    }
+    pub fn rel_zero() -> Self {
+        Point {
+            x: REL_ZERO.0,
+            y: REL_ZERO.1,
+        }
     }
 }
 
@@ -72,8 +85,8 @@ impl Turtle {
         Turtle {
             history: Vec::new(),
             curr: TurtleHistoryFrame {
-                start_pos: Point::new((WINDOW_WIDTH as f32) / 2.0, (WINDOW_HEIGHT as f32) / 2.0),
-                end_pos: Point::new((WINDOW_WIDTH as f32) / 2.0, (WINDOW_HEIGHT as f32) / 2.0),
+                start_pos: Point::rel_zero(),
+                end_pos: Point::rel_zero(),
                 color: TurtleColor::new(255, 255, 255),
                 pen_size: 1.0,
             },
@@ -94,7 +107,7 @@ impl Turtle {
     }
     pub fn turn(&mut self, mut angle: f32) {
         if self.using_degrees() {
-            angle = Self::deg_to_rad(angle)
+            angle = deg_to_rad(angle)
         }
         self.direction = self.direction.clone() + angle
     }
@@ -113,8 +126,18 @@ impl Turtle {
     pub fn pen_down(&mut self) {
         self.pen_state = true
     }
-    pub fn deg_to_rad(x: f32) -> f32 {
-        x * (THE_NUMBER_OF_RADIANS_IN_A_CIRCLE / THE_NUMBER_OF_DEGREES_IN_A_CIRCLE)
+    pub fn get_x(&self) -> f64 {
+        (self.curr.start_pos.x - REL_ZERO.0) as f64
+    }
+    pub fn get_y(&self) -> f64 {
+        (self.curr.start_pos.y - REL_ZERO.1) as f64
+    }
+    pub fn get_h(&self) -> f64 {
+        if self.using_degrees() {
+            rad_to_deg(self.direction) as f64
+        } else {
+            self.direction as f64
+        }
     }
     pub fn polar_to_rect(r: f32, theta: f32) -> Point {
         let newx = theta.cos() * r;
@@ -135,7 +158,7 @@ impl Turtle {
         self.history.push(new);
         self.curr = TurtleHistoryFrame {
             start_pos: self.curr.clone().end_pos, //make the new start pos the new end pos
-            end_pos: Point::new(0.0, 0.0),        //placeholder
+            end_pos: Point::rel_zero(),           //placeholder
             color: self.curr.clone().color,       //move color forward
             pen_size: self.curr.clone().pen_size, //move pen size forward
         }

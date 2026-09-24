@@ -25,6 +25,9 @@ A feature will have :( by it if it is unimplemented
 |Pen down|`d`|Puts the turtles pen down. It is down by default.|
 |Pen up|`u`|Pulls the turtles pen up.|
 |Pen size|`s`|Pops one value off the stack and sets the turtles pen size to that. Size is 1 by default|
+|Get x position|`x`|Pushes the turtle's x position relative to its starting position.|
+|Get y position|`y`|Pushes the turtle's y position relative to its starting position.|
+|Get heading|`h`|Pushes the turtle's heading in the correct unit(degrees or radians) for the current mode. Heading does not wrap (`5[90~]h?!` prints 450)|
 
 ### Stack manipulation commands
 
@@ -32,7 +35,7 @@ A feature will have :( by it if it is unimplemented
 |---|---|---|
 |Duplicate|`.`|Duplicates the top stack value.|
 |Swap|`:`|Swaps the two top stack values.|
-|Dip and undip|`(` and `)`| `(` temporarily pops the top stack value to an inaccessible stack that can be thought of as "above" the main stack. `)` pushes one value from the upper stack.|
+|Dip and undip|`(` and `)`| `(` temporarily pops the top stack value to an inaccessible stack that can be thought of as "above" the main stack. `)` pushes one value from the upper stack. Note that `(` and `)` do not need to be balanced. `[)](` is valid. (`{]}[` is not though!)|
 |Pop|`!`|Discards the top stack value.|
 |Rot and unrot|`@` and `&`| `@` puts the third stack value on top of the stack. `&` puts the first stack value in the third value on the stack.|
 |Debug print|`?`|Print out the whole stack without popping it.|
