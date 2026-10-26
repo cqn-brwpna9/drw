@@ -57,27 +57,12 @@
 # list -> list
 ⇌_◌1:-(⊏)[:⊂]
 
-#tests
-#these cannot actually be run here as this is a .drwm file, which only allows function definitions 
-#these tests are in tests/list_test.drw
-#1⊏ 2⊂ 3⊂?#〚3 〚2 〚1 , ,〛 ,〛 ,〛
-#.⊢?!#3
-#.⊣?!#〚2 〚1 , ,〛 ,〛
-#⊃?!!#3 〚2 〚1 , ,〛 ,〛
-#5⇡
-#.Σ:
-#.Π:?!!!#〚1 〚2 〚3 〚4 〚5 , ,〛 ,〛 ,〛 ,〛 ,〛 120 15
-#,⧻?!#0
-#1⊏⧻?!#1
-#1⊏ 2⊂ 3⊂⧻?!#3
-#5⇡⧻?!#5
-#5⇡◌?!!!!!!#5 1 2 3 4 5
-#5⇡⇌?!#〚5 〚4 〚3 〚2 〚1 , ,〛 ,〛 ,〛 ,〛 ,
-#5⇡
-#.."+'∧
-#&"*'∧
-#:"1+*'∧?!!! # 600 120 15
-# one would expect this to be 720 (2*3*4*5*6), but this is 600 (2*3*4*5*5) because the function is applied to agrigate, so the function is not applied to the last number 
+# Map
+# For when you need to not use the built in pervasion
+# The element of list and item are passed to quote, item first
+# QUOTE SHOULD BE DYADIC!!!11!!!
+# list item quote -> list
+≡_((.⊓1:[))!!!,][⊃)).&(.(`):):(≡)⊂]
 
 #TODO add:
 #pick(get nth element)

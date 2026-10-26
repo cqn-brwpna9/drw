@@ -15,3 +15,7 @@
 .."+'∧
 &"*'∧
 :"1+*'∧?!!! # 600 120 15
+# one would expect this to be 720 (2*3*4*5*6), but this is 600 (2*3*4*5*5) because the function is applied to agrigate, so the function is not applied to the last number
+
+5⇡"+'1..B≡?!# 〚〚2 2 2〛 〚〚3 3 3〛 〚〚4 4 4〛 〚〚5 5 5〛 〚〚6 6 6〛 , ,〛 ,〛 ,〛 ,〛 ,〛
+

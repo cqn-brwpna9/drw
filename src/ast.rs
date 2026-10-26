@@ -331,7 +331,7 @@ impl ASTnode {
     pub fn to_item(quote: Vec<ASTnode>) -> item::Item {
         #[rustfmt::skip] // rustfmt likes to split up (Commands, char)
         let bac_conv_map: HashMap<Commands, char> = HashMap::from(
-            TryInto::<[_; 39]>::try_into(
+            TryInto::<[_; 42]>::try_into(
 		CONVERSION_MAP
 		    .iter()
 		    .map(|x| (x.1, x.0))
